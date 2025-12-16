@@ -10,7 +10,7 @@
     <!-- 引入图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
@@ -164,7 +164,8 @@
                 // 状态标签
                 let statusBadge = '';
                 let btnClass = 'line-btn hover:bg-green-600';
-                let btnText = '<i class="fa-brands fa-line mr-2"></i> 联系卖家';
+                // 修改后的按钮文字
+                let btnText = '<i class="fa-brands fa-line mr-2"></i> 立即 LINE 预定';
                 let btnLink = simpleLineUrl;
 
                 if (car.status === 'sold') {
@@ -191,7 +192,8 @@
                             </div>
                         </div>
                         <div class="p-5 flex-1 flex flex-col">
-                            <h3 class="text-lg font-bold text-gray-800 mb-2 leading-tight">${car.title}</h3>
+                            <!-- 加大标题字体，从 text-lg 改为 text-2xl，font-bold 改为 font-black -->
+                            <h3 class="text-2xl font-black text-gray-900 mb-3 leading-tight tracking-tight">${car.title}</h3>
                             <div class="flex items-center text-sm text-gray-500 mb-3 space-x-4">
                                 <span><i class="fa-regular fa-calendar-days mr-1"></i> ${car.year}年</span>
                                 <span><i class="fa-solid fa-road mr-1"></i> ${car.mileage}万公里</span>
@@ -200,7 +202,7 @@
                                 ${tagsHtml}
                             </div>
                             <div class="mt-auto pt-4 border-t border-gray-100">
-                                <a href="${btnLink}" target="_blank" class="${btnClass} w-full text-white font-medium py-2.5 rounded-lg flex justify-center items-center transition">
+                                <a href="${btnLink}" target="_blank" class="${btnClass} w-full text-white font-bold text-lg py-3 rounded-xl flex justify-center items-center transition shadow-md hover:shadow-lg transform active:scale-95">
                                     ${btnText}
                                 </a>
                             </div>
