@@ -17,6 +17,9 @@
 
   <main class="container">
     <div id="grid"></div>
+    <div id="error" style="display:none;margin-top:16px;color:#b00020;">
+      载入失败：请确认 <code>cars.js</code> 是否存在、内容是否正确。
+    </div>
   </main>
 
   <footer class="footer">
@@ -25,39 +28,86 @@
     </div>
   </footer>
 
+  <!-- 先载入数据 -->
   <script src="./cars.js"></script>
+
   <script>
     const grid = document.getElementById("grid");
-    const LINE_URL = window.LINE_URL;
+    const errorBox = document.getElementById("error");
 
-    function formatPrice(n, currency="LKR") {
-      return new Intl.NumberFormat("en-US").format(n) + " " + currency;
+    function formatPrice(n, currency = "LKR") {
+      const num = Number(n);
+      if (Number.isNaN(num)) return `${n ?? ""} ${currency}`.trim();
+      return new Intl.NumberFormat("en-US").format(num) + " " + currency;
     }
 
-    window.CARS.forEach(car => {
-      const msg = encodeURIComponent(
-        `我想询问这台车：${car.title}\n价格：${formatPrice(car.price, car.currency)}\n编号：${car.id}`
-      );
+    function buildLineLink(lineUrl, message) {
+      const base = (lineUrl || "").trim();
+      if (!base) return null;
 
-      const div = document.createElement("div");
-      div.style.border = "1px solid #ccc";
-      div.style.margin = "20px 0";
-      div.style.padding = "15px";
+      // LINE 官方 deep link：line.me/R/ti/p/@xxxx
+      // 支持 ?text= 带入文字（不同环境兼容性略有差异，但通常可用）
+      const msg = encodeURIComponent(message || "");
+      const joiner = base.includes("?") ? "&" : "?";
+      return `${base}${joiner}text=${msg}`;
+    }
 
-      div.innerHTML = `
-        <h2>${car.title}</h2>
-        <img src="${car.image}" style="max-width:100%;height:auto;" />
-        <p><strong>价格：</strong>${formatPrice(car.price, car.currency)}</p>
-        <ul>
-          ${car.spec.map(s => `<li>${s}</li>`).join("")}
-        </ul>
-        <a href="${LINE_URL}?text=${msg}" target="_blank"
-           style="display:inline-block;padding:10px 15px;background:#19a463;color:#fff;text-decoration:none;">
-           用 LINE 询问 / 购买
-        </a>
-      `;
-      grid.appendChild(div);
-    });
+    try {
+      const LINE_URL = window.LINE_URL;          // 在 cars.js 里定义
+      const cars = window.CARS;                  // 在 cars.js 里定义
+
+      if (!Array.isArray(cars)) {
+        throw new Error("window.CARS is not an array");
+      }
+
+      cars.forEach(car => {
+        const title = car?.title ?? "未命名车辆";
+        const currency = car?.currency ?? "LKR";
+
+        const message =
+`我想询问这台车：${title}
+价格：${formatPrice(car?.price, currency)}
+编号：${car?.id ?? "N/A"}`;
+
+        const lineLink = buildLineLink(LINE_URL, message);
+
+        const div = document.createElement("div");
+        div.style.border = "1px solid #ccc";
+        div.style.margin = "20px 0";
+        div.style.padding = "15px";
+        div.style.borderRadius = "10px";
+
+        const spec = Array.isArray(car?.spec) ? car.spec : [];
+        const specHtml = spec.length
+          ? spec.map(s => `<li>${s}</li>`).join("")
+          : `<li>（暂无规格说明）</li>`;
+
+        const imgHtml = car?.image
+          ? `<img src="${car.image}" alt="${title}" style="max-width:100%;height:auto;border-radius:10px;margin:10px 0;" />`
+          : `<div style="padding:16px;background:#f3f3f3;border-radius:10px;margin:10px 0;">（暂无图片）</div>`;
+
+        const btnHtml = lineLink
+          ? `<a href="${lineLink}" target="_blank" rel="noopener noreferrer"
+               style="display:inline-block;padding:10px 15px;background:#19a463;color:#fff;text-decoration:none;border-radius:8px;">
+               用 LINE 询问 / 购买
+             </a>`
+          : `<div style="color:#b00020;">尚未设置 LINE_URL（请在 cars.js 顶部设置 window.LINE_URL）</div>`;
+
+        div.innerHTML = `
+          <h2 style="margin:0 0 10px 0;">${title}</h2>
+          ${imgHtml}
+          <p><strong>价格：</strong>${formatPrice(car?.price, currency)}</p>
+          <ul>${specHtml}</ul>
+          ${btnHtml}
+        `;
+
+        grid.appendChild(div);
+      });
+
+    } catch (e) {
+      console.error(e);
+      errorBox.style.display = "block";
+    }
   </script>
 </body>
 </html>
