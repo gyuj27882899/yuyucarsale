@@ -10,64 +10,84 @@
 <body>
   <header class="header">
     <div class="container">
-      <h1>🚗 YuYu Car Sale</h1>
-      <p>汽车展示｜价格透明｜点一下 LINE 直接联系</p>
+      <div class="brand">
+        <div class="logo">Y</div>
+        <div>
+          <h1>YuYu Car Sale</h1>
+          <p>精选车辆展示｜价格透明｜一键 LINE 联系</p>
+        </div>
+      </div>
+
+      <div class="topbar">
+        <div class="pill">✨ 精选车况</div>
+        <div class="pill">🧾 明确标价</div>
+        <div class="pill">💬 LINE 快速咨询</div>
+      </div>
     </div>
   </header>
 
   <main class="container">
-    <div id="grid" class="grid"></div>
+    <section id="grid" class="grid"></section>
   </main>
 
   <footer class="footer">
-    <div class="container">
-      <small>© YuYu Car Sale</small>
-    </div>
+    <div class="container">© YuYu Car Sale</div>
   </footer>
 
   <script src="./cars.js"></script>
   <script>
     const grid = document.getElementById("grid");
-    const LINE_URL = window.LINE_URL;
+    const LINE_URL = window.LINE_URL || "https://line.me/R/ti/p/oocheckoo";
 
     function formatPrice(n, currency="LKR") {
       return new Intl.NumberFormat("en-US").format(n) + " " + currency;
     }
 
-    window.CARS.forEach(car => {
+    function lineLink(car){
       const msg = encodeURIComponent(
         `我想询问这台车：${car.title}\n价格：${formatPrice(car.price, car.currency)}\n编号：${car.id}`
       );
+      // 用 line.me 的 링크 + 參數 text
+      return `${LINE_URL}?text=${msg}`;
+    }
 
-      const tagsHtml = (car.tags || []).map(t => `<span class="badge">${t}</span>`).join("");
-
+    (window.CARS || []).forEach(car => {
       const card = document.createElement("article");
       card.className = "card";
+
+      const tags = (car.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
+      const spec = (car.spec || []).map(s => `<li>${s}</li>`).join("");
+
       card.innerHTML = `
-        <div class="card__imgWrap">
-          <img class="card__img" src="${car.image}" alt="${car.title}">
+        <div class="media">
+          <img src="${car.image}" alt="${car.title}" loading="lazy" />
+          <div class="badge"><b>${car.year || ""}</b> · ${car.location || ""}</div>
         </div>
 
-        <div class="card__body">
-          <h2 class="card__title">${car.title}</h2>
-          <p class="card__price">
-            ${formatPrice(car.price, car.currency)}
-            <span>编号 ${car.id}</span>
-          </p>
+        <div class="body">
+          <h2 class="title">${car.title}</h2>
 
-          ${tagsHtml ? `<div class="badges">${tagsHtml}</div>` : ""}
+          <div class="price">
+            <div class="num">${formatPrice(car.price, car.currency)}</div>
+            <div class="id">${car.id}</div>
+          </div>
+
+          <div class="meta">
+            ${tags}
+            ${car.mileage ? `<span class="tag">${car.mileage}</span>` : ""}
+          </div>
 
           <ul class="spec">
-            ${(car.spec || []).map(s => `<li>${s}</li>`).join("")}
+            ${spec}
           </ul>
         </div>
 
-        <div class="card__actions">
-          <a class="btn btn--line" href="${LINE_URL}?text=${msg}" target="_blank" rel="noopener">
-            用 LINE 询问 / 购买
-          </a>
+        <div class="actions">
+          <a class="btn" href="${lineLink(car)}" target="_blank" rel="noopener">用 LINE 询问</a>
+          <a class="btn secondary" href="${LINE_URL}" target="_blank" rel="noopener">加 LINE</a>
         </div>
       `;
+
       grid.appendChild(card);
     });
   </script>
