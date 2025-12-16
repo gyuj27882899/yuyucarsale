@@ -4,15 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- ✨ SEO 关键优化 ✨ -->
+    <!-- ✨ SEO 关键优化：标准网址 (Canonical URL) ✨ -->
+    <!-- 告诉 Google 这是此内容的唯一正版网址，避免重复内容权重分散 -->
+    <link rel="canonical" href="https://yuyucarsale.pages.dev/">
+
     <title>炮炮王 | 台东外约首选 | 100%真实照片 | 价格透明</title>
     <meta name="description" content="炮炮王提供台东最优质的外约与专属陪伴服务。台东外送茶、台东约会首选，拥有丰富真实照片档案。绝无隐藏费用，立即寻找您的台东地下情人，享受极致尊爵体验。">
     <meta name="keywords" content="台东茶, 台东外约, 台东外送茶, 台东约会, 台东地下情人, 炮炮王, 真实照片, 价格透明, 陪伴">
+    <meta name="author" content="炮炮王">
+    <meta name="robots" content="index, follow"> <!-- 明确告诉爬虫要收录 -->
     
     <!-- 社群分享设定 -->
     <meta property="og:title" content="炮炮王 | 台东外约首选">
-    <meta property="og:description" content="满意度100% | 真实照片 | 价格透明">
+    <meta property="og:description" content="台东地区满意度100% | 真实照片 | 价格透明">
     <meta property="og:image" content="https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1200">
+    <meta property="og:url" content="https://yuyucarsale.pages.dev/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- ✨ 结构化资料 (JSON-LD) - 给 Google 的名片 ✨ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      "name": "炮炮王 - 台东外约首选",
+      "image": "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1200",
+      "@id": "https://yuyucarsale.pages.dev/",
+      "url": "https://yuyucarsale.pages.dev/",
+      "telephone": "",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Taitung City",
+        "addressRegion": "Taitung County",
+        "addressCountry": "TW"
+      },
+      "priceRange": "$$",
+      "description": "提供台东地区最优质的约会、外约与专属陪伴服务，价格透明，照片真实。"
+    }
+    </script>
 
     <!-- 样式库 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -61,6 +90,7 @@
         <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <i class="fa-solid fa-crown text-2xl text-yellow-500"></i>
+                <!-- 将 Logo 文字稍微加上 SEO 友善的 hidden 标签或保持原样，这里保持视觉美观 -->
                 <span class="text-2xl font-black tracking-wider text-white">炮炮王</span>
             </div>
             <a href="#" id="navLineBtn" target="_blank" class="line-btn text-white px-4 py-2 rounded-full text-sm font-bold flex items-center shadow-lg transform active:scale-95 transition">
@@ -69,15 +99,16 @@
         </div>
     </nav>
 
-    <!-- 头部 Hero 区 -->
+    <!-- 头部 Hero 区 - SEO H1 优化 -->
     <header class="relative overflow-hidden h-56 md:h-72">
         <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-center opacity-40"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
         <div class="relative max-w-6xl mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
+            <!-- 🚨 SEO 重点：H1 标题包含主要地区关键字 -->
             <h1 class="text-3xl md:text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-red-500">
-                极致体验．尊爵享受
+                台东外约首选．炮炮王
             </h1>
-            <p class="text-gray-300 text-sm md:text-lg">满意度 100% | 真实照片 | 价格透明</p>
+            <p class="text-gray-300 text-sm md:text-lg">台东外送茶 | 真实照片 | 价格透明 | 极致尊爵享受</p>
         </div>
     </header>
 
@@ -87,7 +118,7 @@
         <div class="flex justify-center mb-8">
             <div class="relative w-full max-w-md">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="搜寻名字、关键字、价格..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
+                <input type="text" id="searchInput" placeholder="搜寻台东茶、名字、价格..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
             </div>
         </div>
 
@@ -109,7 +140,7 @@
 
     <!-- 页脚 -->
     <footer class="bg-black text-gray-600 py-6 mt-8 text-center border-t border-gray-800 text-xs">
-        <p>&copy; 2025 炮炮王. All Rights Reserved.</p>
+        <p>&copy; 2025 炮炮王. 台东外送茶与约会服务. All Rights Reserved.</p>
     </footer>
 
     <!-- 相册弹窗 -->
@@ -167,7 +198,7 @@
             return null;
         }
 
-        // 🟢 关键修改：图片转换逻辑升级
+        // 🟢 图片转换逻辑
         function convertDriveLink(url) {
             const id = getDriveId(url);
             if (id) {
@@ -248,11 +279,14 @@
                 const lineMsg = encodeURIComponent(`你好，我想预定「${name}」，方案 $${price}/40分钟`);
                 const lineUrl = `https://line.me/ti/p/~${myLineId}?text=${lineMsg}`;
 
+                // SEO Alt Text 优化：将 "名字" 改为 "名字 - 台东外约/台东茶"
+                const seoAltText = `${name} - 台东外约 台东茶`;
+
                 const cardHtml = `
                     <div class="profile-card rounded-xl overflow-hidden shadow-lg relative group border border-gray-700">
                         ${statusHtml}
                         <div class="h-96 overflow-hidden relative cursor-pointer" onclick="openGallery(${index})">
-                            <img src="${mainImg}" alt="${name}" loading="lazy" 
+                            <img src="${mainImg}" alt="${seoAltText}" loading="lazy" 
                                  class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100" 
                                  onerror="this.src='https://via.placeholder.com/600x800?text=图片权限未开/Image+Error'; this.style.objectFit='contain'; this.parentElement.style.backgroundColor='#333';">
                             
