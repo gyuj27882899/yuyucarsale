@@ -167,9 +167,14 @@
             return null;
         }
 
+        // 🟢 关键修改：图片转换逻辑升级
         function convertDriveLink(url) {
             const id = getDriveId(url);
-            if (id) return `https://drive.google.com/uc?export=view&id=${id}`;
+            if (id) {
+                // 改用 thumbnail API，这会自动将 HEIC/特殊格式转为 JPG 显示
+                // &sz=w1000 指定宽度为 1000px，确保清晰度
+                return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+            }
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
