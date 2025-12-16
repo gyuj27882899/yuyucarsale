@@ -3,58 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>炮炮王 (诊断模式)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <title>炮炮王 - 系统诊断中</title>
+    <!-- 引入 PapaParse -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
-    <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #1a1a1a; color: #fff; }
-        .profile-card { background-color: #2d2d2d; }
-        .line-btn { background-color: #06C755; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
+<body class="bg-gray-100 p-10 font-mono">
 
-    <!-- 🚨 诊断讯息区 (Debug Area) 🚨 -->
-    <div id="debug-area" class="bg-red-900 text-white p-4 text-xs font-mono border-b-4 border-red-500 overflow-auto h-48">
-        <h3 class="font-bold text-lg mb-2">🚨 系统诊断报告 (请截图给我看)</h3>
-        <p id="debug-msg">正在连线资料库...</p>
-        <ul id="debug-list" class="list-disc pl-5 mt-2 space-y-1"></ul>
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-xl border-4 border-red-500">
+        <h1 class="text-3xl font-bold text-red-600 mb-4">🚨 系统诊断报告</h1>
+        <p class="mb-4">请截图这个画面给我看，特别是下方的黑底文字区。</p>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-bold mb-2">1. 连线测试：</h2>
+            <div id="status" class="text-lg font-bold text-gray-500">正在连线 Google Sheet...</div>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-bold mb-2">2. 栏位名称检查 (最常出错)：</h2>
+            <p>我们需要的栏位是: <span class="bg-gray-200 px-1">Name</span>, <span class="bg-gray-200 px-1">MainImage</span>, <span class="bg-gray-200 px-1">Price</span></p>
+            <p class="mt-2">实际读到的栏位是：</p>
+            <pre id="headers-display" class="bg-black text-yellow-400 p-4 rounded mt-1 overflow-auto">等待资料中...</pre>
+        </div>
+
+        <div>
+            <h2 class="text-xl font-bold mb-2">3. 资料读取测试 (前 3 笔)：</h2>
+            <div id="data-preview" class="space-y-4">
+                <!-- 资料将显示于此 -->
+            </div>
+        </div>
     </div>
 
-    <!-- 列表区 -->
-    <section class="max-w-6xl mx-auto px-4 py-8 flex-grow">
-        <div id="profiles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- 内容生成区 -->
-        </div>
-    </section>
-
-    <!-- 核心逻辑 -->
     <script>
-        // ==========================================
-        // 👇 请确认这里的 CSV 连结是否正确 👇
-        // ==========================================
-        const googleSheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=0&single=true&output=csv"; 
-        const myLineId = "你的LINE_ID"; 
-        // ==========================================
+        // 👇 你的 CSV 连结
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=0&single=true&output=csv";
 
-        const debugMsg = document.getElementById('debug-msg');
-        const debugList = document.getElementById('debug-list');
-        const container = document.getElementById('profiles-container');
+        const statusDiv = document.getElementById('status');
+        const headersDiv = document.getElementById('headers-display');
+        const previewDiv = document.getElementById('data-preview');
 
-        function log(msg, isError = false) {
-            console.log(msg);
-            const li = document.createElement('li');
-            li.textContent = msg;
-            if (isError) li.style.color = '#ff9999';
-            debugList.appendChild(li);
-        }
-
-        // 连结转换器
+        // Drive 图片转换器
         function convertDriveLink(url) {
-            if (!url) return null;
+            if (!url) return "无连结";
             if (url.includes('drive.google.com')) {
                 const idMatch = url.match(/\/d\/(.*?)\/|\?id=(.*?)$/);
                 const id = idMatch ? (idMatch[1] || idMatch[2]) : null;
@@ -63,71 +53,59 @@
             return url;
         }
 
-        function init() {
-            log(`开始读取 CSV: ${googleSheetCsvUrl}`);
-            
-            if (!googleSheetCsvUrl) {
-                log("❌ 错误: CSV 连结为空！请检查代码。", true);
-                return;
-            }
+        // 开始读取
+        const cacheBuster = (csvUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
 
-            const cacheBuster = (googleSheetCsvUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
-            
-            Papa.parse(googleSheetCsvUrl + cacheBuster, {
-                download: true,
-                header: true,
-                complete: function(results) {
-                    log(`✅ CSV 读取成功！共找到 ${results.data.length} 笔资料`);
+        Papa.parse(csvUrl + cacheBuster, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                console.log(results);
+
+                // 1. 检查有没有读到东西
+                if (results.data && results.data.length > 0) {
+                    statusDiv.innerHTML = `<span class="text-green-600">✅ 成功连线！读取到 ${results.data.length} 笔资料。</span>`;
                     
-                    if (results.data.length > 0) {
-                        // 检查栏位名称
-                        const headers = Object.keys(results.data[0]);
-                        log(`📋 侦测到的栏位名称: ${headers.join(", ")}`);
-                        
-                        // 检查关键栏位是否存在
-                        const hasName = headers.some(h => h.toLowerCase() === 'name');
-                        const hasImage = headers.some(h => h.toLowerCase() === 'mainimage');
-                        
-                        if (!hasName) log("⚠️ 警告: 找不到 'Name' 栏位 (请检查大小写)", true);
-                        if (!hasImage) log("⚠️ 警告: 找不到 'MainImage' 栏位 (请检查大小写)", true);
-                    }
+                    // 2. 显示抓到的栏位名称
+                    const headers = Object.keys(results.data[0]);
+                    headersDiv.innerText = JSON.stringify(headers, null, 2);
 
-                    results.data.forEach((item, index) => {
-                        const name = item.Name || item.name;
-                        const rawImg = item.MainImage || item.mainImage;
-                        const finalImg = convertDriveLink(rawImg);
-                        
-                        if (!name) {
-                            log(`⚠️ 第 ${index + 1} 行资料被略过 (因为没有名字)`);
-                            return;
-                        }
+                    // 检查关键栏位
+                    const hasName = headers.some(h => h.trim().toLowerCase() === 'name');
+                    const hasImage = headers.some(h => h.trim().toLowerCase() === 'mainimage');
 
-                        log(`➡️ 读取到: ${name} | 图片原始连结: ${rawImg ? rawImg.substring(0, 30) + "..." : "无"} | 转换后: ${finalImg ? finalImg.substring(0, 30) + "..." : "无"}`);
+                    if (!hasName) headersDiv.innerHTML += '\n\n❌ 严重错误：找不到 "Name" 栏位！请检查 Google Sheet 第一行拼字。';
+                    if (!hasImage) headersDiv.innerHTML += '\n\n❌ 严重错误：找不到 "MainImage" 栏位！请检查 Google Sheet 第一行拼字。';
 
-                        // 简单的渲染测试
-                        container.innerHTML += `
-                            <div class="profile-card rounded-xl overflow-hidden shadow-lg p-4 border border-gray-700">
-                                <h3 class="text-xl font-bold mb-2">${name}</h3>
-                                <p class="text-xs text-gray-400 mb-2">原始连结: ${rawImg}</p>
-                                <div class="h-48 bg-gray-800 flex items-center justify-center overflow-hidden rounded">
-                                    <img src="${finalImg}" alt="${name}" class="w-full h-full object-cover" 
-                                         onload="log('✅ 图片载入成功: ${name}')" 
-                                         onerror="log('❌ 图片载入失败: ${name} (可能是权限没开)', true); this.src='https://via.placeholder.com/300?text=Error'">
+                    // 3. 显示前几笔资料的内容
+                    results.data.slice(0, 3).forEach((item, i) => {
+                        const name = item.Name || item.name || "名字为空";
+                        const rawImg = item.MainImage || item.mainImage || "";
+                        const convImg = convertDriveLink(rawImg);
+
+                        previewDiv.innerHTML += `
+                            <div class="border p-4 rounded bg-gray-50 flex gap-4 items-start">
+                                <div class="w-24 h-24 bg-gray-300 flex-shrink-0">
+                                    <img src="${convImg}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/100?text=Error'">
+                                </div>
+                                <div class="overflow-hidden">
+                                    <p class="font-bold">第 ${i+1} 笔: ${name}</p>
+                                    <p class="text-sm text-gray-600 truncate">原始图片连结: ${rawImg}</p>
+                                    <p class="text-sm text-blue-600 truncate">转换后连结: ${convImg}</p>
                                 </div>
                             </div>
                         `;
                     });
-                    
-                    debugMsg.textContent = "诊断完成。请查看下方列表是否有红色错误。";
-                },
-                error: function(err) {
-                    log(`❌ CSV 读取失败: ${err.message}`, true);
-                    debugMsg.textContent = "读取失败，请检查连结。";
-                }
-            });
-        }
 
-        init();
+                } else {
+                    statusDiv.innerHTML = `<span class="text-red-600">❌ 连线成功，但资料是空的！(可能是 Google Sheet 里没资料，或是没发布成 CSV)</span>`;
+                }
+            },
+            error: function(err) {
+                statusDiv.innerHTML = `<span class="text-red-600">❌ 连线彻底失败！请检查网路或 CSV 网址。错误讯息: ${err.message}</span>`;
+            }
+        });
     </script>
 </body>
 </html>
