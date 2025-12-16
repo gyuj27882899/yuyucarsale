@@ -87,7 +87,7 @@
         <div class="flex justify-center mb-8">
             <div class="relative w-full max-w-md">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="搜寻名字、关键字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
+                <input type="text" id="searchInput" placeholder="搜寻名字、关键字、价格..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
             </div>
         </div>
 
@@ -363,11 +363,25 @@
         });
 
         function performSearch() {
-            const term = searchInput.value.toLowerCase();
+            const term = searchInput.value.toLowerCase().trim();
             const filtered = profilesData.filter(item => {
+                // 1. 搜寻名字
                 const name = getValue(item, ['Name', 'name', '名字']).toLowerCase();
-                const tags = getValue(item, ['Tags', 'tags', '标签']).toLowerCase();
-                return name.includes(term) || tags.includes(term);
+                // 2. 搜寻标签 (关键字)
+                const tags = getValue(item, ['Tags', 'tags', '标签', '关键字']).toLowerCase();
+                // 3. 搜寻身材
+                const body = getValue(item, ['Body', 'body', '身材', '三围']).toLowerCase();
+                // 4. 搜寻年龄
+                const age = getValue(item, ['Age', 'age', '年龄', '岁数']).toLowerCase();
+                // 5. 搜寻价格
+                const price = getValue(item, ['Price', 'price', '价格', '金额']).toLowerCase();
+
+                // 只要任一栏位包含关键字，就显示
+                return name.includes(term) || 
+                       tags.includes(term) || 
+                       body.includes(term) || 
+                       age.includes(term) || 
+                       price.includes(term);
             });
             currentDisplayedData = filtered;
             renderProfiles(filtered);
