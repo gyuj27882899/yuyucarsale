@@ -1,135 +1,243 @@
-<!doctype html>
-<html lang="zh-Hans">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>优优车行</title>
-  <link rel="stylesheet" href="./styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>优优车行 | 优质好车推荐</title>
+    
+    <!-- 引入 Tailwind CSS (无需下载，直接使用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
+        .car-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .car-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .line-btn { background-color: #06C755; } /* LINE 官方绿色 */
+        .line-btn:hover { background-color: #05b34c; }
+    </style>
 </head>
+<body class="text-gray-800">
 
-<body>
-  <!-- 顶部导航（极简） -->
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <div class="left">
-        <a class="icon-btn" href="#" aria-label="Search">🔍</a>
-      </div>
-
-      <div class="brand">
-        <div class="brand-name">优优车行</div>
-        <div class="brand-sub">车辆展示｜价格透明｜LINE 一键联系</div>
-      </div>
-
-      <div class="right">
-        <a class="pill" href="#" onclick="scrollToSection('cars');return false;">车辆</a>
-        <a class="pill pill-primary" id="lineTop" target="_blank" rel="noopener">加 LINE</a>
-      </div>
-    </div>
-  </header>
-
-  <main class="container">
-    <!-- 分类区域：你说的「标题 + 底下都是试图」 -->
-    <section class="section" id="cars">
-      <div class="section-head">
-        <h2 class="section-title">精选车辆</h2>
-        <div class="section-tools">
-          <select id="sortSelect" class="select">
-            <option value="latest">依最新项目排序</option>
-            <option value="priceAsc">价格：低 → 高</option>
-            <option value="priceDesc">价格：高 → 低</option>
-          </select>
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-car-side text-2xl text-blue-600"></i>
+                <span class="text-xl font-bold tracking-wide text-gray-900">优优车行</span>
+            </div>
+            <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="line-btn text-white px-4 py-2 rounded-full text-sm font-medium flex items-center shadow-lg transform active:scale-95 transition">
+                <i class="fa-brands fa-line text-lg mr-2"></i> 加 LINE 咨询
+            </a>
         </div>
-      </div>
+    </nav>
 
-      <div id="grid" class="grid"></div>
+    <!-- 头部大图 (Hero Section) -->
+    <header class="relative bg-gray-900 text-white overflow-hidden">
+        <!-- 背景图：你可以替换这里的 URL -->
+        <div class="absolute inset-0 opacity-50 bg-[url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center"></div>
+        <div class="relative max-w-6xl mx-auto px-4 py-20 md:py-32 flex flex-col items-center text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-md">寻找您的梦想座驾</h1>
+            <p class="text-lg md:text-xl mb-8 text-gray-200 max-w-2xl">车况透明 • 价格实惠 • 诚信服务</p>
+            <a href="#car-list" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition transform hover:scale-105">
+                浏览所有车辆
+            </a>
+        </div>
+    </header>
+
+    <!-- 搜索与筛选区 -->
+    <section id="car-list" class="max-w-6xl mx-auto px-4 py-8">
+        <div class="bg-white p-4 rounded-xl shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center mb-8">
+            <div class="relative w-full md:w-1/2">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-gray-400"></i>
+                <input type="text" id="searchInput" placeholder="搜寻品牌、型号..." class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+            </div>
+            <div class="flex gap-2 w-full md:w-auto">
+                <select id="sortSelect" class="w-full md:w-48 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                    <option value="newest">最新上架</option>
+                    <option value="price_low">价格：由低到高</option>
+                    <option value="price_high">价格：由高到低</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 车辆列表容器 -->
+        <div id="cars-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- JavaScript 会自动把车子填入这里 -->
+        </div>
+
+        <!-- 无搜寻结果提示 -->
+        <div id="no-results" class="hidden text-center py-12">
+            <i class="fa-regular fa-face-frown text-4xl text-gray-300 mb-3"></i>
+            <p class="text-gray-500">没有找到符合条件的车辆，试着搜寻其他关键词？</p>
+        </div>
     </section>
-  </main>
 
-  <footer class="footer">
-    <div class="container">© 优优车行</div>
-  </footer>
+    <!-- 页脚 -->
+    <footer class="bg-gray-800 text-gray-400 py-8 mt-12">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p class="mb-2">&copy; 2025 优优车行. All rights reserved.</p>
+            <p class="text-sm">看车请提前预约 | 官方 LINE ID: @YuYuCar</p>
+        </div>
+    </footer>
 
-  <script src="./cars.js"></script>
-  <script>
-    const grid = document.getElementById("grid");
-    const LINE_URL = window.LINE_URL || "https://line.me/R/ti/p/oocheckoo";
+    <!-- 核心逻辑脚本 -->
+    <script>
+        // ==========================================
+        // 👇👇 在这里编辑你的车辆资料 (这就是你的后台) 👇👇
+        // ==========================================
+        const myLineId = "你的LINE_ID"; // 请替换成你的 LINE ID，不要加 @
+        
+        const carsData = [
+            {
+                id: 1,
+                title: "2021 Toyota Camry 2.0 尊爵版",
+                price: "72.8", // 单位：万
+                mileage: "3.5", // 单位：万公里
+                year: 2021,
+                image: "https://images.unsplash.com/photo-1621007947382-bb3c3968e3bb?auto=format&fit=crop&w=800&q=80", 
+                tags: ["一手车", "原厂保养", "无事故"],
+                status: "available" // available = 在售, sold = 已售出
+            },
+            {
+                id: 2,
+                title: "2019 Honda CR-V 1.5 VTi-S",
+                price: "65.5",
+                mileage: "5.2",
+                year: 2019,
+                image: "https://images.unsplash.com/photo-1568844293986-8d0400bd4745?auto=format&fit=crop&w=800&q=80",
+                tags: ["休旅车首选", "大空间"],
+                status: "available"
+            },
+            {
+                id: 3,
+                title: "2022 Mazda 3 5D 旗舰型",
+                price: "85.0",
+                mileage: "1.2",
+                year: 2022,
+                image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80",
+                tags: ["准新车", "魂动红", "女用库房车"],
+                status: "available"
+            },
+            {
+                id: 4,
+                title: "2018 Benz C300 AMG Line",
+                price: "138.0",
+                mileage: "6.8",
+                year: 2018,
+                image: "https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=800&q=80",
+                tags: ["总代理", "满配", "全景天窗"],
+                status: "sold" // 这一台设定为已售出
+            }
+        ];
 
-    // 顶部「加 LINE」
-    document.getElementById("lineTop").href = LINE_URL;
+        // ==========================================
+        // 👆👆 编辑结束，以下代码不需要动 👆👆
+        // ==========================================
 
-    function formatPrice(n, currency="LKR") {
-      return new Intl.NumberFormat("en-US").format(n) + " " + currency;
-    }
+        const container = document.getElementById('cars-container');
+        const searchInput = document.getElementById('searchInput');
+        const sortSelect = document.getElementById('sortSelect');
+        const noResults = document.getElementById('no-results');
 
-    function lineLink(car){
-      const msg = encodeURIComponent(
-        `我想询问这台车：${car.title}\n价格：${formatPrice(car.price, car.currency)}\n编号：${car.id}`
-      );
-      return `${LINE_URL}?text=${msg}`;
-    }
+        // 渲染车辆列表函数
+        function renderCars(cars) {
+            container.innerHTML = '';
+            
+            if (cars.length === 0) {
+                noResults.classList.remove('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+            }
 
-    function scrollToSection(id){
-      const el = document.getElementById(id);
-      if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
-    }
+            cars.forEach(car => {
+                // 产生 LINE 连结 (包含预设讯息)
+                const lineMessage = encodeURIComponent(`你好，我想询问关于「${car.title}」的细节，价格是 ${car.price} 万吗？`);
+                const lineUrl = `https://line.me/ti/p/~${myLineId}?text=${lineMessage}`; // 注意：并非所有 LINE 连结都支援 text 参数，若无效则仅跳好友
+                // 简单的加好友链接备用方案
+                const simpleLineUrl = `https://line.me/ti/p/~${myLineId}`;
 
-    function render(list){
-      grid.innerHTML = "";
-      (list || []).forEach(car => {
-        const tags = (car.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
-        const spec = (car.spec || []).map(s => `<li>${s}</li>`).join("");
+                // 状态标签
+                let statusBadge = '';
+                let btnClass = 'line-btn hover:bg-green-600';
+                let btnText = '<i class="fa-brands fa-line mr-2"></i> 联系卖家';
+                let btnLink = simpleLineUrl;
 
-        const card = document.createElement("article");
-        card.className = "card";
-        card.innerHTML = `
-          <div class="media">
-            <img src="${car.image}" alt="${car.title}" loading="lazy" />
-          </div>
+                if (car.status === 'sold') {
+                    statusBadge = '<span class="absolute top-3 right-3 bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-full z-10">已售出</span>';
+                    btnClass = 'bg-gray-300 cursor-not-allowed';
+                    btnText = '已售出';
+                    btnLink = 'javascript:void(0)';
+                } else {
+                    statusBadge = '<span class="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">在售</span>';
+                }
 
-          <div class="card-body">
-            <div class="card-title-row">
-              <h3 class="card-title">${car.title}</h3>
-              <div class="card-id">${car.id}</div>
-            </div>
+                // 生成 Tag HTML
+                const tagsHtml = car.tags.map(tag => 
+                    `<span class="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mr-1 mb-1">#${tag}</span>`
+                ).join('');
 
-            <div class="card-price">${formatPrice(car.price, car.currency)}</div>
+                const cardHtml = `
+                    <div class="car-card bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col relative group">
+                        ${statusBadge}
+                        <div class="h-56 overflow-hidden relative">
+                            <img src="${car.image}" alt="${car.title}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
+                            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-4">
+                                <p class="text-white font-bold text-lg drop-shadow-md">$ ${car.price} 万</p>
+                            </div>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col">
+                            <h3 class="text-lg font-bold text-gray-800 mb-2 leading-tight">${car.title}</h3>
+                            <div class="flex items-center text-sm text-gray-500 mb-3 space-x-4">
+                                <span><i class="fa-regular fa-calendar-days mr-1"></i> ${car.year}年</span>
+                                <span><i class="fa-solid fa-road mr-1"></i> ${car.mileage}万公里</span>
+                            </div>
+                            <div class="mb-4 flex flex-wrap">
+                                ${tagsHtml}
+                            </div>
+                            <div class="mt-auto pt-4 border-t border-gray-100">
+                                <a href="${btnLink}" target="_blank" class="${btnClass} w-full text-white font-medium py-2.5 rounded-lg flex justify-center items-center transition">
+                                    ${btnText}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
 
-            <div class="meta">
-              ${car.year ? `<span class="tag">${car.year}</span>` : ""}
-              ${car.location ? `<span class="tag">${car.location}</span>` : ""}
-              ${car.mileage ? `<span class="tag">${car.mileage}</span>` : ""}
-              ${tags}
-            </div>
+        // 过滤与排序逻辑
+        function filterAndSort() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const sortType = sortSelect.value;
 
-            <ul class="spec">
-              ${spec}
-            </ul>
+            let filtered = carsData.filter(car => 
+                car.title.toLowerCase().includes(searchTerm) || 
+                car.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+            );
 
-            <div class="actions">
-              <a class="btn" href="${lineLink(car)}" target="_blank" rel="noopener">用 LINE 询问</a>
-              <a class="btn btn-ghost" href="${LINE_URL}" target="_blank" rel="noopener">加 LINE</a>
-            </div>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-    }
+            if (sortType === 'price_low') {
+                filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+            } else if (sortType === 'price_high') {
+                filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+            } else if (sortType === 'newest') {
+                filtered.sort((a, b) => b.id - a.id); // 假设 ID 越大越新
+            }
 
-    // 排序
-    const cars = (window.CARS || []).slice();
-    const sortSelect = document.getElementById("sortSelect");
+            renderCars(filtered);
+        }
 
-    function applySort(){
-      const v = sortSelect.value;
-      const list = cars.slice();
-      if(v === "priceAsc") list.sort((a,b)=>(a.price||0)-(b.price||0));
-      if(v === "priceDesc") list.sort((a,b)=>(b.price||0)-(a.price||0));
-      // latest：维持原顺序
-      render(list);
-    }
+        // 事件监听
+        searchInput.addEventListener('input', filterAndSort);
+        sortSelect.addEventListener('change', filterAndSort);
 
-    sortSelect.addEventListener("change", applySort);
-    applySort();
-  </script>
+        // 初始化
+        renderCars(carsData);
+    </script>
 </body>
 </html>
