@@ -3,41 +3,59 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>YuYu Car Sale</title>
+  <title>优优车行</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
-  <header class="header">
-    <div class="container">
-      <div class="brand">
-        <div class="logo">Y</div>
-        <div>
-          <h1>YuYu Car Sale</h1>
-          <p>精选车辆展示｜价格透明｜一键 LINE 联系</p>
-        </div>
+  <!-- 顶部导航（极简） -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="left">
+        <a class="icon-btn" href="#" aria-label="Search">🔍</a>
       </div>
 
-      <div class="topbar">
-        <div class="pill">✨ 精选车况</div>
-        <div class="pill">🧾 明确标价</div>
-        <div class="pill">💬 LINE 快速咨询</div>
+      <div class="brand">
+        <div class="brand-name">优优车行</div>
+        <div class="brand-sub">车辆展示｜价格透明｜LINE 一键联系</div>
+      </div>
+
+      <div class="right">
+        <a class="pill" href="#" onclick="scrollToSection('cars');return false;">车辆</a>
+        <a class="pill pill-primary" id="lineTop" target="_blank" rel="noopener">加 LINE</a>
       </div>
     </div>
   </header>
 
   <main class="container">
-    <section id="grid" class="grid"></section>
+    <!-- 分类区域：你说的「标题 + 底下都是试图」 -->
+    <section class="section" id="cars">
+      <div class="section-head">
+        <h2 class="section-title">精选车辆</h2>
+        <div class="section-tools">
+          <select id="sortSelect" class="select">
+            <option value="latest">依最新项目排序</option>
+            <option value="priceAsc">价格：低 → 高</option>
+            <option value="priceDesc">价格：高 → 低</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="grid" class="grid"></div>
+    </section>
   </main>
 
   <footer class="footer">
-    <div class="container">© YuYu Car Sale</div>
+    <div class="container">© 优优车行</div>
   </footer>
 
   <script src="./cars.js"></script>
   <script>
     const grid = document.getElementById("grid");
     const LINE_URL = window.LINE_URL || "https://line.me/R/ti/p/oocheckoo";
+
+    // 顶部「加 LINE」
+    document.getElementById("lineTop").href = LINE_URL;
 
     function formatPrice(n, currency="LKR") {
       return new Intl.NumberFormat("en-US").format(n) + " " + currency;
@@ -47,49 +65,71 @@
       const msg = encodeURIComponent(
         `我想询问这台车：${car.title}\n价格：${formatPrice(car.price, car.currency)}\n编号：${car.id}`
       );
-      // 用 line.me 的 링크 + 參數 text
       return `${LINE_URL}?text=${msg}`;
     }
 
-    (window.CARS || []).forEach(car => {
-      const card = document.createElement("article");
-      card.className = "card";
+    function scrollToSection(id){
+      const el = document.getElementById(id);
+      if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
+    }
 
-      const tags = (car.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
-      const spec = (car.spec || []).map(s => `<li>${s}</li>`).join("");
+    function render(list){
+      grid.innerHTML = "";
+      (list || []).forEach(car => {
+        const tags = (car.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
+        const spec = (car.spec || []).map(s => `<li>${s}</li>`).join("");
 
-      card.innerHTML = `
-        <div class="media">
-          <img src="${car.image}" alt="${car.title}" loading="lazy" />
-          <div class="badge"><b>${car.year || ""}</b> · ${car.location || ""}</div>
-        </div>
-
-        <div class="body">
-          <h2 class="title">${car.title}</h2>
-
-          <div class="price">
-            <div class="num">${formatPrice(car.price, car.currency)}</div>
-            <div class="id">${car.id}</div>
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="media">
+            <img src="${car.image}" alt="${car.title}" loading="lazy" />
           </div>
 
-          <div class="meta">
-            ${tags}
-            ${car.mileage ? `<span class="tag">${car.mileage}</span>` : ""}
+          <div class="card-body">
+            <div class="card-title-row">
+              <h3 class="card-title">${car.title}</h3>
+              <div class="card-id">${car.id}</div>
+            </div>
+
+            <div class="card-price">${formatPrice(car.price, car.currency)}</div>
+
+            <div class="meta">
+              ${car.year ? `<span class="tag">${car.year}</span>` : ""}
+              ${car.location ? `<span class="tag">${car.location}</span>` : ""}
+              ${car.mileage ? `<span class="tag">${car.mileage}</span>` : ""}
+              ${tags}
+            </div>
+
+            <ul class="spec">
+              ${spec}
+            </ul>
+
+            <div class="actions">
+              <a class="btn" href="${lineLink(car)}" target="_blank" rel="noopener">用 LINE 询问</a>
+              <a class="btn btn-ghost" href="${LINE_URL}" target="_blank" rel="noopener">加 LINE</a>
+            </div>
           </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
 
-          <ul class="spec">
-            ${spec}
-          </ul>
-        </div>
+    // 排序
+    const cars = (window.CARS || []).slice();
+    const sortSelect = document.getElementById("sortSelect");
 
-        <div class="actions">
-          <a class="btn" href="${lineLink(car)}" target="_blank" rel="noopener">用 LINE 询问</a>
-          <a class="btn secondary" href="${LINE_URL}" target="_blank" rel="noopener">加 LINE</a>
-        </div>
-      `;
+    function applySort(){
+      const v = sortSelect.value;
+      const list = cars.slice();
+      if(v === "priceAsc") list.sort((a,b)=>(a.price||0)-(b.price||0));
+      if(v === "priceDesc") list.sort((a,b)=>(b.price||0)-(a.price||0));
+      // latest：维持原顺序
+      render(list);
+    }
 
-      grid.appendChild(card);
-    });
+    sortSelect.addEventListener("change", applySort);
+    applySort();
   </script>
 </body>
 </html>
