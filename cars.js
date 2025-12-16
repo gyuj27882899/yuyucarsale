@@ -1,4 +1,4 @@
-window.LINE_URL = "https://line.me/R/ti/p/@yuyucarsale";
+window.LINE_URL = "https://line.me/R/ti/p/oocheckoo";
 
 window.CARS = [
   {
@@ -19,3 +19,4 @@ window.CARS = [
     ]
   }
 ];
+
