@@ -11,28 +11,42 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <!-- PapaParse (Google Sheet CSV 读取用) -->
+    <!-- PapaParse -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #1a1a1a; color: #fff; } /* 改为深色主题更具质感 */
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #1a1a1a; color: #fff; }
         .profile-card { transition: transform 0.3s ease; background-color: #2d2d2d; }
         .profile-card:hover { transform: translateY(-5px); }
         .line-btn { background-color: #06C755; }
         .line-btn:hover { background-color: #05b34c; }
         
-        /* 模态视窗 (Gallery Modal) 样式 */
         #gallery-modal { 
             backdrop-filter: blur(10px); 
             background-color: rgba(0, 0, 0, 0.95);
         }
-        /* 隐藏滚动条但保留功能 */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* 图片滑动优化 */
         .snap-x { scroll-snap-type: x mandatory; }
         .snap-center { scroll-snap-align: center; }
+        
+        /* 影片容器 RWD 设定 */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+            background: #000;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
@@ -52,7 +66,6 @@
 
     <!-- 头部大图 -->
     <header class="relative overflow-hidden h-56 md:h-72">
-        <!-- 这里的背景图可以换成更有氛围的夜景或酒吧图 -->
         <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-center opacity-40"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
         <div class="relative max-w-6xl mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
@@ -73,18 +86,18 @@
             </div>
         </div>
 
-        <!-- 载入中提示 -->
+        <!-- Loading -->
         <div id="loading" class="text-center py-10">
             <i class="fa-solid fa-circle-notch fa-spin text-3xl text-yellow-500"></i>
             <p class="text-gray-500 mt-2">资料读取中...</p>
         </div>
 
-        <!-- 资料显示区 -->
+        <!-- 资料容器 -->
         <div id="profiles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
-            <!-- 档案将由 JS 生成 -->
+            <!-- JS 生成内容 -->
         </div>
 
-        <!-- 无结果提示 -->
+        <!-- 无结果 -->
         <div id="no-results" class="hidden text-center py-20">
             <p class="text-gray-500 text-xl">目前没有符合条件的资料</p>
         </div>
@@ -98,17 +111,16 @@
     <!-- 相册弹窗 (Modal) -->
     <div id="gallery-modal" class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center">
         <!-- 关闭按钮 -->
-        <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2">
+        <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2 drop-shadow-md">
             <i class="fa-solid fa-xmark"></i>
         </button>
         
-        <!-- 弹窗内容容器 -->
         <div class="w-full max-w-5xl h-full flex flex-col justify-center relative">
             <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-white mb-2 text-center pt-4 drop-shadow-md"></h2>
             
-            <!-- 图片滑动区 -->
+            <!-- 图片/影片滑动区 -->
             <div id="modal-images-container" class="flex overflow-x-auto space-x-4 p-4 hide-scrollbar snap-x h-[65vh] md:h-[75vh] items-center">
-                <!-- 图片由 JS 插入 -->
+                <!-- 动态插入 -->
             </div>
             
             <div class="text-center pb-6 pt-2 px-4 w-full max-w-md mx-auto">
@@ -123,80 +135,100 @@
     <!-- 核心逻辑 -->
     <script>
         // ==========================================
-        // 👇 设定区 (Google Sheet / LINE ID) 👇
+        // 👇 设定区 👇
         // ==========================================
         
-        // 1. 您的 LINE ID (不要加 @)
+        // 1. 请输入您的 LINE ID (不加 @)
         const myLineId = "你的LINE_ID"; 
         
-        // 2. Google Sheet CSV 连结
-        // 必填栏位: Name, Age, Body, Price, ExtraPrice, MainImage, GalleryImages
-        const googleSheetCsvUrl = ""; 
+        // 2. 您的 Google Sheet CSV 连结 (已填入)
+        const googleSheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=0&single=true&output=csv"; 
 
         // ==========================================
-        // 👇 范例资料 (当没有连结 Google Sheet 时显示) 👇
-        // ==========================================
-        
+
+        // 预设资料 (当读取失败时显示)
         const defaultProfiles = [
             {
-                id: 1,
-                name: "小美",
-                age: "20岁",
-                body: "162 / 45 / C",
-                price: "3500", 
-                extraPrice: "500", 
-                mainImage: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop",
-                // 相册：用逗号分隔多个连结
-                galleryImages: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800, https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=800, https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=800",
+                id: 1, name: "系统连线中...", age: "--", body: "--", price: "0", extraPrice: "0", 
+                mainImage: "https://via.placeholder.com/600x800?text=Loading",
                 status: "available"
-            },
-            {
-                id: 2,
-                name: "Lisa",
-                age: "24岁",
-                body: "168 / 50 / D",
-                price: "4000",
-                extraPrice: "500",
-                mainImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop",
-                galleryImages: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800, https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=800",
-                status: "available"
-            },
-            {
-                id: 3,
-                name: "安安",
-                age: "22岁",
-                body: "158 / 42 / B",
-                price: "3200",
-                extraPrice: "500",
-                mainImage: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=800&auto=format&fit=crop",
-                galleryImages: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=800",
-                status: "busy" 
             }
         ];
 
         let profilesData = [];
+        let currentDisplayedData = [];
         const container = document.getElementById('profiles-container');
         const searchInput = document.getElementById('searchInput');
         const modal = document.getElementById('gallery-modal');
         const loadingDiv = document.getElementById('loading');
         
-        // 更新顶部 LINE 按钮
+        // 设定 LINE 连结
         document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
+
+        // ✨ Google Drive ID 提取器
+        function getDriveId(url) {
+            if (!url) return null;
+            if (url.includes('drive.google.com')) {
+                const idMatch = url.match(/\/d\/(.*?)\/|\?id=(.*?)$/);
+                return idMatch ? (idMatch[1] || idMatch[2]) : null;
+            }
+            return null;
+        }
+
+        // ✨ 图片连结转换 (用于 <img>)
+        function convertDriveImageLink(url) {
+            const id = getDriveId(url);
+            if (id) {
+                return `https://drive.google.com/uc?export=view&id=${id}`;
+            }
+            return url || "https://via.placeholder.com/600x800?text=No+Image";
+        }
+
+        // ✨ 影片连结转换 (用于 <iframe>)
+        function convertDriveVideoLink(url) {
+            const id = getDriveId(url);
+            if (id) {
+                // 转换成预览播放器连结
+                return `https://drive.google.com/file/d/${id}/preview`;
+            }
+            return url;
+        }
 
         // 初始化
         function init() {
             if (googleSheetCsvUrl && googleSheetCsvUrl.startsWith('http')) {
-                Papa.parse(googleSheetCsvUrl, {
+                // 加上时间戳记避免快取
+                const cacheBuster = (googleSheetCsvUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+                
+                Papa.parse(googleSheetCsvUrl + cacheBuster, {
                     download: true,
                     header: true,
                     complete: function(results) {
-                        profilesData = results.data.filter(item => (item.Name || item.name) && (item.Name || item.name).trim() !== "");
+                        // 🔍 严格筛选逻辑 🔍
+                        profilesData = results.data.filter(item => {
+                            // 读取各项数值 (兼容大小写)
+                            const name = item.Name || item.name;
+                            const age = item.Age || item.age;
+                            const body = item.Body || item.body;
+                            const price = item.Price || item.price;
+                            const mainImg = item.MainImage || item.mainImage;
+                            
+                            // 必须所有关键栏位都有填，才回传 true (显示)
+                            // 注意：Status 和 GalleryImages 是可选的，所以不在这里检查
+                            return name && name.trim() !== "" &&
+                                   age && age.trim() !== "" &&
+                                   body && body.trim() !== "" &&
+                                   price && price.trim() !== "" &&
+                                   mainImg && mainImg.trim() !== "";
+                        });
+
                         loadingDiv.classList.add('hidden');
                         container.classList.remove('hidden');
+                        currentDisplayedData = profilesData;
                         renderProfiles(profilesData);
                     },
                     error: () => {
-                        console.error("CSV 读取失败，使用范例资料");
+                        console.error("CSV 读取失败");
                         loadingDiv.classList.add('hidden');
                         container.classList.remove('hidden');
                         profilesData = defaultProfiles;
@@ -211,7 +243,7 @@
             }
         }
 
-        // 渲染列表
+        // 渲染卡片列表
         function renderProfiles(data) {
             container.innerHTML = '';
             
@@ -222,24 +254,23 @@
             document.getElementById('no-results').classList.add('hidden');
 
             data.forEach((profile, index) => {
-                // 资料栏位对应 (兼容大小写)
                 const name = profile.Name || profile.name || "未命名";
                 const age = profile.Age || profile.age || "--";
                 const body = profile.Body || profile.body || "--";
                 const price = profile.Price || profile.price || "0";
                 const extra = profile.ExtraPrice || profile.extraPrice || "500";
-                const mainImg = profile.MainImage || profile.mainImage || "https://via.placeholder.com/600x800?text=No+Image";
-                const status = (profile.Status || profile.status || "available").toLowerCase();
                 
-                // 状态徽章
-                let statusHtml = '';
-                if (status === 'busy' || status === '忙碌') {
-                    statusHtml = '<span class="absolute top-3 left-3 bg-red-600/90 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10 backdrop-blur-sm">忙碌中</span>';
-                } else {
-                    statusHtml = '<span class="absolute top-3 left-3 bg-green-500/90 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10 backdrop-blur-sm">可预约</span>';
-                }
+                // 主图通常建议放图片，若放影片可能会载入慢，这里预设主图是图片处理
+                const mainImg = convertDriveImageLink(profile.MainImage || profile.mainImage);
+                
+                // 状态判断
+                const rawStatus = (profile.Status || profile.status || "available").toLowerCase();
+                const isBusy = ["busy", "忙", "no", "x", "false", "booked"].some(keyword => rawStatus.includes(keyword));
+                
+                let statusHtml = isBusy 
+                    ? '<span class="absolute top-3 left-3 bg-red-600/90 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10 backdrop-blur-sm"><i class="fa-solid fa-ban mr-1"></i> 忙碌中</span>'
+                    : '<span class="absolute top-3 left-3 bg-green-500/90 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10 backdrop-blur-sm"><i class="fa-solid fa-check mr-1"></i> 可预约</span>';
 
-                // LINE 预定连结
                 const lineMsg = encodeURIComponent(`你好，我想预定「${name}」，方案 $${price}/40分钟`);
                 const lineUrl = `https://line.me/ti/p/~${myLineId}?text=${lineMsg}`;
 
@@ -247,16 +278,14 @@
                     <div class="profile-card rounded-xl overflow-hidden shadow-lg relative group border border-gray-700">
                         ${statusHtml}
                         
-                        <!-- 主图 (点击触发相册) -->
+                        <!-- 点击打开相册 -->
                         <div class="h-96 overflow-hidden relative cursor-pointer" onclick="openGallery(${index})">
-                            <img src="${mainImg}" alt="${name}" loading="lazy" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100">
+                            <img src="${mainImg}" alt="${name}" loading="lazy" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100" onerror="this.src='https://via.placeholder.com/600x800?text=No+Image'">
                             
-                            <!-- 放大镜提示 -->
                             <div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition flex items-center justify-center">
                                 <i class="fa-solid fa-expand text-white/80 opacity-0 group-hover:opacity-100 text-5xl drop-shadow-lg transform scale-50 group-hover:scale-100 transition duration-300"></i>
                             </div>
                             
-                            <!-- 底部名字层 -->
                             <div class="absolute bottom-0 w-full bg-gradient-to-t from-black via-black/70 to-transparent p-4 pt-12">
                                 <h3 class="text-3xl font-black text-white drop-shadow-md tracking-wide">${name}</h3>
                             </div>
@@ -264,7 +293,6 @@
 
                         <!-- 资讯栏 -->
                         <div class="p-5 bg-[#2d2d2d]">
-                            <!-- 详细资讯 -->
                             <div class="grid grid-cols-2 gap-3 mb-5 text-sm">
                                 <div class="bg-gray-800/50 p-2 rounded flex items-center justify-center border border-gray-700">
                                     <i class="fa-solid fa-cake-candles text-yellow-500 mr-2"></i> 
@@ -276,7 +304,6 @@
                                 </div>
                             </div>
                             
-                            <!-- 价格方案 -->
                             <div class="bg-gray-900 rounded-lg p-3 mb-5 border border-gray-700 shadow-inner">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-gray-400 text-sm">基本方案</span>
@@ -288,7 +315,6 @@
                                 </div>
                             </div>
 
-                            <!-- 按钮 -->
                             <a href="${lineUrl}" target="_blank" onclick="event.stopPropagation()" class="line-btn w-full text-white font-black text-lg py-3 rounded-lg flex justify-center items-center shadow-lg hover:shadow-green-500/50 transition">
                                 <i class="fa-brands fa-line mr-2"></i> 立即 LINE 预定
                             </a>
@@ -299,22 +325,9 @@
             });
         }
 
-        // 打开相册 (Modal)
+        // 打开相册 (支援影片)
         function openGallery(index) {
-            // 每次打开时，从目前的资料阵列 (filtered 或 full) 中抓取
-            // 这里为了简单，我们重新在全域资料中搜寻或直接使用 profilesData (若无筛选)
-            // 建议：直接用当下的 profilesData[index] 可能会有排序问题，
-            // 但如果 filterAndSort 逻辑没改动原阵列顺序则没问题。
-            // 这里我们用 profilesData（它会被搜寻功能更新吗？搜寻目前是过滤后渲染，所以 index 会变）
-            
-            // 修正：搜寻后 index 会对不上。我们需要在 render 时把原始物件传进去，或者简单点，
-            // 我们假设搜寻不常用，或者直接在 render 里存当前显示的资料。
-            
-            // 简单解法：renderCars 时我们把整个物件资料绑在 DOM 上，或者使用全域变数 currentDisplayedData
-            // 由于上面 renderProfiles 没有储存 currentDisplayedData，我们改一下逻辑：
-            
-            // 为了避免 bug，我们直接从 DOM 获取或者在 render 时把资料存入全域
-            const profile = currentDisplayedData[index]; // 使用当前显示的资料
+            const profile = currentDisplayedData[index];
             if(!profile) return;
 
             const modalTitle = document.getElementById('modal-title');
@@ -323,58 +336,75 @@
             
             modalTitle.innerText = (profile.Name || profile.name);
             
-            // 组合所有图片：主图 + 相册图
-            let images = [];
-            const mainImg = profile.MainImage || profile.mainImage;
-            if(mainImg) images.push(mainImg);
+            // 收集所有媒体连结
+            let mediaItems = [];
             
+            // 1. 加入主图
+            const mainImgRaw = profile.MainImage || profile.mainImage;
+            if(mainImgRaw) mediaItems.push(mainImgRaw);
+            
+            // 2. 加入相册图
             let galleryRaw = profile.GalleryImages || profile.galleryImages || "";
             if(galleryRaw) {
-                // 分割逗号，去头去尾空格
                 const galleryUrls = galleryRaw.split(/[,，\s]+/).filter(url => url.length > 5);
-                images = images.concat(galleryUrls);
+                mediaItems = mediaItems.concat(galleryUrls);
             }
 
-            // 生成图片 HTML (修正样式以适应不同比例)
-            if(images.length === 0) {
+            // 生成内容
+            if(mediaItems.length === 0) {
                 modalContainer.innerHTML = `<p class="text-white">暂无更多照片</p>`;
             } else {
-                modalContainer.innerHTML = images.map(url => `
-                    <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-2">
-                        <img src="${url}" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl bg-black/50">
-                    </div>
-                `).join('');
+                modalContainer.innerHTML = mediaItems.map(url => {
+                    // 判断是否为影片 (检查 #video 或 .mp4)
+                    const isVideo = url.includes('#video') || url.endsWith('.mp4');
+                    
+                    if (isVideo) {
+                        // 影片处理
+                        const videoUrl = convertDriveVideoLink(url.replace('#video', ''));
+                        return `
+                             <div class="snap-center shrink-0 w-full md:w-auto h-full flex items-center justify-center p-2" style="min-width: 320px;">
+                                <div class="video-wrapper shadow-2xl border border-gray-700">
+                                    <iframe src="${videoUrl}" allow="autoplay" allowfullscreen></iframe>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // 图片处理
+                        const imgUrl = convertDriveImageLink(url);
+                        return `
+                            <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-2">
+                                <img src="${imgUrl}" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl bg-black/50" onerror="this.src='https://via.placeholder.com/600x800?text=Error'">
+                            </div>
+                        `;
+                    }
+                }).join('');
             }
 
-            // 设定 Modal 里的 Line 按钮
             const price = profile.Price || profile.price || "";
             const lineMsg = encodeURIComponent(`你好，我正在看「${profile.Name||profile.name}」的照片，想预定方案 $${price}/40分钟`);
             modalLineBtn.href = `https://line.me/ti/p/~${myLineId}?text=${lineMsg}`;
 
-            // 显示 Modal
             modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // 禁止背景卷动
+            document.body.style.overflow = 'hidden';
         }
 
         // 关闭相册
         function closeGallery() {
             modal.classList.add('hidden');
-            document.body.style.overflow = 'auto'; // 恢复卷动
+            // 停止所有影片播放 (透过清空内容)
+            document.getElementById('modal-images-container').innerHTML = '';
+            document.body.style.overflow = 'auto';
         }
         
-        // 点击 Modal 背景也可以关闭
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeGallery();
         });
 
         // 搜寻功能
-        let currentDisplayedData = []; // 用来存当前显示的资料，给 modal 用
-        
         function performSearch() {
             const term = searchInput.value.toLowerCase();
             const filtered = profilesData.filter(p => {
                 const n = (p.Name || p.name).toLowerCase();
-                // 如果有 Tag 也可以搜
                 const t = (p.Tags || p.tags || "").toString().toLowerCase();
                 return n.includes(term) || t.includes(term);
             });
@@ -383,11 +413,7 @@
         }
 
         searchInput.addEventListener('input', performSearch);
-
-        // 初始化
         init();
-        // 预设显示的资料等于全部资料
-        currentDisplayedData = defaultProfiles; 
     </script>
 </body>
 </html>
