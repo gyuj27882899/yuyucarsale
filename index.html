@@ -16,10 +16,7 @@
   </header>
 
   <main class="container">
-    <div id="grid"></div>
-    <div id="error" style="display:none;margin-top:16px;color:#b00020;">
-      载入失败：请确认 <code>cars.js</code> 是否存在、内容是否正确。
-    </div>
+    <div id="grid" class="grid"></div>
   </main>
 
   <footer class="footer">
@@ -28,86 +25,51 @@
     </div>
   </footer>
 
-  <!-- 先载入数据 -->
   <script src="./cars.js"></script>
-
   <script>
     const grid = document.getElementById("grid");
-    const errorBox = document.getElementById("error");
+    const LINE_URL = window.LINE_URL;
 
-    function formatPrice(n, currency = "LKR") {
-      const num = Number(n);
-      if (Number.isNaN(num)) return `${n ?? ""} ${currency}`.trim();
-      return new Intl.NumberFormat("en-US").format(num) + " " + currency;
+    function formatPrice(n, currency="LKR") {
+      return new Intl.NumberFormat("en-US").format(n) + " " + currency;
     }
 
-    function buildLineLink(lineUrl, message) {
-      const base = (lineUrl || "").trim();
-      if (!base) return null;
+    window.CARS.forEach(car => {
+      const msg = encodeURIComponent(
+        `我想询问这台车：${car.title}\n价格：${formatPrice(car.price, car.currency)}\n编号：${car.id}`
+      );
 
-      // LINE 官方 deep link：line.me/R/ti/p/@xxxx
-      // 支持 ?text= 带入文字（不同环境兼容性略有差异，但通常可用）
-      const msg = encodeURIComponent(message || "");
-      const joiner = base.includes("?") ? "&" : "?";
-      return `${base}${joiner}text=${msg}`;
-    }
+      const tagsHtml = (car.tags || []).map(t => `<span class="badge">${t}</span>`).join("");
 
-    try {
-      const LINE_URL = window.LINE_URL;          // 在 cars.js 里定义
-      const cars = window.CARS;                  // 在 cars.js 里定义
+      const card = document.createElement("article");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="card__imgWrap">
+          <img class="card__img" src="${car.image}" alt="${car.title}">
+        </div>
 
-      if (!Array.isArray(cars)) {
-        throw new Error("window.CARS is not an array");
-      }
+        <div class="card__body">
+          <h2 class="card__title">${car.title}</h2>
+          <p class="card__price">
+            ${formatPrice(car.price, car.currency)}
+            <span>编号 ${car.id}</span>
+          </p>
 
-      cars.forEach(car => {
-        const title = car?.title ?? "未命名车辆";
-        const currency = car?.currency ?? "LKR";
+          ${tagsHtml ? `<div class="badges">${tagsHtml}</div>` : ""}
 
-        const message =
-`我想询问这台车：${title}
-价格：${formatPrice(car?.price, currency)}
-编号：${car?.id ?? "N/A"}`;
+          <ul class="spec">
+            ${(car.spec || []).map(s => `<li>${s}</li>`).join("")}
+          </ul>
+        </div>
 
-        const lineLink = buildLineLink(LINE_URL, message);
-
-        const div = document.createElement("div");
-        div.style.border = "1px solid #ccc";
-        div.style.margin = "20px 0";
-        div.style.padding = "15px";
-        div.style.borderRadius = "10px";
-
-        const spec = Array.isArray(car?.spec) ? car.spec : [];
-        const specHtml = spec.length
-          ? spec.map(s => `<li>${s}</li>`).join("")
-          : `<li>（暂无规格说明）</li>`;
-
-        const imgHtml = car?.image
-          ? `<img src="${car.image}" alt="${title}" style="max-width:100%;height:auto;border-radius:10px;margin:10px 0;" />`
-          : `<div style="padding:16px;background:#f3f3f3;border-radius:10px;margin:10px 0;">（暂无图片）</div>`;
-
-        const btnHtml = lineLink
-          ? `<a href="${lineLink}" target="_blank" rel="noopener noreferrer"
-               style="display:inline-block;padding:10px 15px;background:#19a463;color:#fff;text-decoration:none;border-radius:8px;">
-               用 LINE 询问 / 购买
-             </a>`
-          : `<div style="color:#b00020;">尚未设置 LINE_URL（请在 cars.js 顶部设置 window.LINE_URL）</div>`;
-
-        div.innerHTML = `
-          <h2 style="margin:0 0 10px 0;">${title}</h2>
-          ${imgHtml}
-          <p><strong>价格：</strong>${formatPrice(car?.price, currency)}</p>
-          <ul>${specHtml}</ul>
-          ${btnHtml}
-        `;
-
-        grid.appendChild(div);
-      });
-
-    } catch (e) {
-      console.error(e);
-      errorBox.style.display = "block";
-    }
+        <div class="card__actions">
+          <a class="btn btn--line" href="${LINE_URL}?text=${msg}" target="_blank" rel="noopener">
+            用 LINE 询问 / 购买
+          </a>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
   </script>
 </body>
 </html>
