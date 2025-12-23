@@ -51,25 +51,37 @@
             width: 100%; 
             height: 100%; 
             object-fit: contain; 
-            max-height: 85vh; 
+            max-height: 80vh; 
         }
 
-        /* 🟢 影片容器 (Iframe) 強制放大 */
-        .video-container {
+        /* 🟢 影片容器設定 */
+        .video-wrapper {
             position: relative;
             width: 100%;
-            height: 80vh; 
-            background: #000;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            overflow: hidden;
         }
-        .video-container iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        
+        /* 隱藏影片原生控制項，改用點擊播放 */
+        video {
+            max-height: 80vh;
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            object-fit: contain;
+            background-color: #000;
+            cursor: pointer;
+        }
+        
+        /* 影片讀取時的 Loading 圈圈 */
+        .video-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1; /* 在影片下面 */
         }
     </style>
 </head>
@@ -102,7 +114,6 @@
 
     <!-- 列表內容區 -->
     <section class="max-w-6xl mx-auto px-4 py-8 flex-grow">
-        <!-- 搜尋框 -->
         <div class="flex justify-center mb-8">
             <div class="relative w-full max-w-md">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
@@ -110,16 +121,13 @@
             </div>
         </div>
 
-        <!-- 載入中提示 -->
         <div id="loading" class="text-center py-10">
             <i class="fa-solid fa-circle-notch fa-spin text-3xl text-yellow-500"></i>
             <p class="text-gray-500 mt-2">資料讀取中...</p>
         </div>
 
-        <!-- 卡片容器 -->
         <div id="profiles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
 
-        <!-- 無結果提示 -->
         <div id="no-results" class="hidden text-center py-20">
             <p class="text-gray-500 text-xl">目前沒有符合條件的資料</p>
         </div>
@@ -132,21 +140,18 @@
 
     <!-- 相簿彈窗 -->
     <div id="gallery-modal" class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center">
-        <!-- 關閉按鈕 -->
         <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2 drop-shadow-md bg-black/50 rounded-full w-12 h-12 flex items-center justify-center">
             <i class="fa-solid fa-xmark"></i>
         </button>
-        
         <div class="w-full max-w-5xl h-full flex flex-col justify-center relative">
             <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-white mb-4 text-center pt-4 drop-shadow-md"></h2>
             
-            <!-- 圖片影片滑動區 -->
-            <div id="modal-images-container" class="flex overflow-x-auto space-x-4 p-4 hide-scrollbar snap-x h-[85vh] items-center w-full">
+            <div id="modal-images-container" class="flex overflow-x-auto space-x-4 p-4 hide-scrollbar snap-x h-[75vh] items-center w-full">
                 <!-- 內容由 JS 生成 -->
             </div>
             
             <div class="text-center pb-6 pt-2 px-4 w-full max-w-md mx-auto">
-                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑動查看更多</p>
+                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑動查看更多 | 點擊影片可暫停/播放</p>
                 <a href="#" id="modal-line-btn" target="_blank" class="line-btn text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg transform active:scale-95 transition block w-full">
                     立即 LINE 預定
                 </a>
@@ -172,7 +177,6 @@
         
         document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
 
-        // 智慧欄位讀取
         function getValue(item, keys) {
             const allKeys = Object.keys(item);
             for (let targetKey of keys) {
@@ -182,27 +186,24 @@
             return "";
         }
 
-        // Drive ID 提取器 (支援 Google Form 回應的 open?id= 格式)
         function getDriveId(url) {
             if (!url) return null;
-            const cleanUrl = url.split('#')[0]; // 移除可能的手動標記
-            
-            // 支援 /d/ID, id=ID, open?id=ID
-            const idMatch = cleanUrl.match(/\/d\/(.*?)\/|id=(.*?)(&|$)/);
-            return idMatch ? (idMatch[1] || idMatch[2]) : null;
+            const cleanUrl = url.split('#')[0];
+            const idMatch = cleanUrl.match(/[-\w]{25,}/);
+            return idMatch ? idMatch[0] : null;
         }
 
-        // 🟢 圖片：使用 Thumbnail API
+        // 圖片轉換
         function convertDriveLink(url) {
             const id = getDriveId(url);
             if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w2000`; 
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
-        // 🟢 影片：改用「預覽播放器 (Preview)」以支援所有格式
+        // 影片轉換
         function convertDriveVideoLink(url) {
             const id = getDriveId(url);
-            if (id) return `https://drive.google.com/file/d/${id}/preview`;
+            if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
             return url;
         }
 
@@ -252,12 +253,10 @@
                 const body = getValue(item, ['車身', 'Body', 'body', '身材']) || "--";
                 const price = getValue(item, ['車價', 'Price', 'price', '價格']) || "0";
                 
-                // Form 上傳圖片 (封面)
                 const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
                 const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
                 const mainImg = convertDriveLink(firstImg);
                 
-                // 狀態判斷
                 const status = getValue(item, ['Status', 'status', '狀態']).toLowerCase();
                 const isBusy = ["busy", "忙", "no", "x", "false"].some(k => status.includes(k));
                 
@@ -275,7 +274,7 @@
                         <div class="h-96 overflow-hidden relative cursor-pointer" onclick="openGallery(${index})">
                             <img src="${mainImg}" alt="${seoAltText}" loading="lazy" 
                                  class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100" 
-                                 onerror="this.src='https://via.placeholder.com/600x800?text=圖片讀取中...';">
+                                 onerror="this.src='https://via.placeholder.com/600x800?text=讀取中...';">
                             
                             <div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition flex items-center justify-center">
                                 <i class="fa-solid fa-expand text-white/80 opacity-0 group-hover:opacity-100 text-5xl drop-shadow-lg transform scale-50 group-hover:scale-100 transition duration-300"></i>
@@ -324,41 +323,43 @@
             
             let mediaItems = [];
             
-            // 1. 抓取圖片欄位 (可能多張)
             const rawMain = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
             if(rawMain) {
                 const urls = rawMain.split(/[,，\s]+/).filter(u => u.length > 5);
-                mediaItems = mediaItems.concat(urls.map(url => ({type: 'image', url: url})));
+                mediaItems = mediaItems.concat(urls);
             }
             
-            // 2. 抓取影片欄位 (新增邏輯)
-            // 自動尋找標題包含「影片」或「Video」的欄位
-            const rawVideo = getValue(item, ['Video', 'video', '影片', '視頻']);
-            if(rawVideo) {
-                // 影片欄位也可能有多個連結，用逗號分隔
-                const videoUrls = rawVideo.split(/[,，\s]+/).filter(u => u.length > 5);
-                // 加到媒體列表，並標記為 video 類型
-                mediaItems = mediaItems.concat(videoUrls.map(url => ({type: 'video', url: url})));
+            const rawGallery = getValue(item, ['Gallery', '相冊', '相簿', '更多']);
+            if(rawGallery) {
+                const urls = rawGallery.split(/[,，\s]+/).filter(u => u.length > 5);
+                mediaItems = mediaItems.concat(urls);
             }
 
             if(mediaItems.length === 0) {
                 modalContainer.innerHTML = `<p class="text-white">暫無更多照片</p>`;
             } else {
-                modalContainer.innerHTML = mediaItems.map(media => {
-                    // 如果是影片欄位來的，或者連結本身包含 #video，都視為影片
-                    const isVideo = media.type === 'video' || media.url.toLowerCase().includes('#video');
+                modalContainer.innerHTML = mediaItems.map(url => {
+                    const isVideo = url.toLowerCase().includes('#video') || url.toLowerCase().endsWith('.mp4');
                     
                     if (isVideo) {
-                        const videoUrl = convertDriveVideoLink(media.url);
+                        const videoUrl = convertDriveVideoLink(url);
+                        // 🟢 影片: 加上封面圖 (poster) 解決 LINE 讀不到問題
+                        // 🟢 移除 controls 屬性，解決醜按鈕問題
+                        // 🟢 加上 onclick 事件，點擊畫面可暫停/播放
                         return `
-                             <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-0" style="min-width: 100%;">
-                                <div class="video-container shadow-2xl border border-gray-700">
-                                    <iframe src="${videoUrl}" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                             <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-2" style="min-width: 100%;">
+                                <div class="video-wrapper shadow-2xl border border-gray-700">
+                                    <div class="video-loading text-white"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>
+                                    <video src="${videoUrl}" 
+                                           autoplay muted loop playsinline webkit-playsinline
+                                           poster="${convertDriveLink(url)}" 
+                                           onclick="this.paused ? this.play() : this.pause()">
+                                    </video>
                                 </div>
                             </div>
                         `;
                     } else {
-                        const imgUrl = convertDriveLink(media.url);
+                        const imgUrl = convertDriveLink(url);
                         return `
                             <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-2" style="min-width: 100%;">
                                 <img src="${imgUrl}" class="gallery-img rounded-lg shadow-2xl bg-black/50" 
