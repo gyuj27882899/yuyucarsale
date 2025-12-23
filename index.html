@@ -4,29 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- ✨ SEO 關鍵優化：標準網址 (Canonical URL) ✨ -->
+    <!-- ✨ SEO 关键优化：标准网址 (Canonical URL) ✨ -->
     <link rel="canonical" href="https://yuyucarsale.pages.dev/">
 
-    <title>炮炮王 | 台東外約首選 | 100%真實照片 | 價格透明</title>
-    <meta name="description" content="炮炮王提供台東最優質的外約與專屬陪伴服務。台東外送茶、台東約會首選，擁有豐富真實照片檔案。絕無隱藏費用，立即尋找您的台東地下情人，享受極致尊爵體驗。">
-    <meta name="keywords" content="台東茶, 台東外約, 台東外送茶, 台東約會, 台東地下情人, 炮炮王, 真實照片, 價格透明, 陪伴">
+    <title>炮炮王 | 台东外约首选 | 100%真实照片 | 价格透明</title>
+    <meta name="description" content="炮炮王提供台东最优质的外约与专属陪伴服务。台东外送茶、台东约会首选，拥有丰富真实照片档案。绝无隐藏费用，立即寻找您的台东地下情人，享受极致尊爵体验。">
+    <meta name="keywords" content="台东茶, 台东外约, 台东外送茶, 台东约会, 台东地下情人, 炮炮王, 真实照片, 价格透明, 陪伴">
     <meta name="author" content="炮炮王">
     <meta name="robots" content="index, follow">
     
-    <!-- 社群分享設定 (Open Graph) -->
-    <meta property="og:title" content="炮炮王 | 台東外約首選">
-    <meta property="og:description" content="台東地區滿意度100% | 真實照片 | 價格透明">
+    <!-- 社群分享设定 (Open Graph) -->
+    <meta property="og:title" content="炮炮王 | 台东外约首选">
+    <meta property="og:description" content="台东地区满意度100% | 真实照片 | 价格透明">
     <meta property="og:image" content="https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1200">
     <meta property="og:url" content="https://yuyucarsale.pages.dev/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="zh_TW">
 
-    <!-- ✨ 結構化資料 (JSON-LD) ✨ -->
+    <!-- ✨ 结构化资料 (JSON-LD) ✨ -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "ProfessionalService",
-      "name": "炮炮王 - 台東外約首選",
+      "name": "炮炮王 - 台东外约首选",
       "image": "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1200",
       "@id": "https://yuyucarsale.pages.dev/",
       "url": "https://yuyucarsale.pages.dev/",
@@ -38,15 +38,15 @@
         "addressCountry": "TW"
       },
       "priceRange": "$$",
-      "description": "提供台東地區最優質的約會、外約與專屬陪伴服務，價格透明，照片真實。"
+      "description": "提供台东地区最优质的约会、外约与专属陪伴服务，价格透明，照片真实。"
     }
     </script>
 
-    <!-- 樣式庫 -->
+    <!-- 样式库 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <!-- CSV 解析庫 -->
+    <!-- CSV 解析库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <style>
@@ -56,7 +56,7 @@
         .line-btn { background-color: #06C755; }
         .line-btn:hover { background-color: #05b34c; }
         
-        /* 彈窗樣式 */
+        /* 弹窗样式 */
         #gallery-modal { 
             backdrop-filter: blur(10px); 
             background-color: rgba(0, 0, 0, 0.95);
@@ -66,7 +66,7 @@
         .snap-x { scroll-snap-type: x mandatory; }
         .snap-center { scroll-snap-align: center; }
         
-        /* 影片容器 RWD 設定 */
+        /* 影片容器 RWD 设定 */
         .video-wrapper {
             position: relative;
             width: 100%;
@@ -87,7 +87,7 @@
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
 
-    <!-- 頂部導航欄 -->
+    <!-- 顶部导航栏 -->
     <nav class="bg-gray-800 shadow-lg sticky top-0 z-40 border-b border-gray-700">
         <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
@@ -100,50 +100,50 @@
         </div>
     </nav>
 
-    <!-- 頭部 Hero 區 -->
+    <!-- 头部 Hero 区 -->
     <header class="relative overflow-hidden h-56 md:h-72">
         <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-center opacity-40"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
         <div class="relative max-w-6xl mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
             <h1 class="text-3xl md:text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-red-500">
-                台東外約首選．炮炮王
+                台东外约首选．炮炮王
             </h1>
-            <p class="text-gray-300 text-sm md:text-lg">台東外送茶 | 真實照片 | 價格透明 | 極致尊爵享受</p>
+            <p class="text-gray-300 text-sm md:text-lg">台东外送茶 | 真实照片 | 价格透明 | 极致尊爵享受</p>
         </div>
     </header>
 
-    <!-- 列表內容區 -->
+    <!-- 列表内容区 -->
     <section class="max-w-6xl mx-auto px-4 py-8 flex-grow">
-        <!-- 搜尋框 -->
+        <!-- 搜寻框 -->
         <div class="flex justify-center mb-8">
             <div class="relative w-full max-w-md">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="搜尋車名、車價、關鍵字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
+                <input type="text" id="searchInput" placeholder="搜寻车名、车价、关键字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
             </div>
         </div>
 
-        <!-- 載入中提示 -->
+        <!-- 载入中提示 -->
         <div id="loading" class="text-center py-10">
             <i class="fa-solid fa-circle-notch fa-spin text-3xl text-yellow-500"></i>
-            <p class="text-gray-500 mt-2">資料讀取中...</p>
-            <p class="text-xs text-gray-600 mt-1">若讀取很久，請檢查 Google Sheet 權限是否設為「知道連結的使用者」</p>
+            <p class="text-gray-500 mt-2">资料读取中...</p>
+            <p class="text-xs text-gray-600 mt-1">若读取很久，请检查 Google Sheet 权限是否设为「知道连结的使用者」</p>
         </div>
 
         <!-- 卡片容器 -->
         <div id="profiles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
 
-        <!-- 無結果提示 -->
+        <!-- 无结果提示 -->
         <div id="no-results" class="hidden text-center py-20">
-            <p class="text-gray-500 text-xl">目前沒有符合條件的資料</p>
+            <p class="text-gray-500 text-xl">目前没有符合条件的资料</p>
         </div>
     </section>
 
-    <!-- 頁腳 -->
+    <!-- 页脚 -->
     <footer class="bg-black text-gray-600 py-6 mt-8 text-center border-t border-gray-800 text-xs">
-        <p>&copy; 2025 炮炮王. 台東外送茶與約會服務. All Rights Reserved.</p>
+        <p>&copy; 2025 炮炮王. 台东外送茶与约会服务. All Rights Reserved.</p>
     </footer>
 
-    <!-- 相簿彈窗 -->
+    <!-- 相册弹窗 -->
     <div id="gallery-modal" class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center">
         <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2 drop-shadow-md">
             <i class="fa-solid fa-xmark"></i>
@@ -152,25 +152,21 @@
             <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-white mb-2 text-center pt-4 drop-shadow-md"></h2>
             <div id="modal-images-container" class="flex overflow-x-auto space-x-4 p-4 hide-scrollbar snap-x h-[65vh] md:h-[75vh] items-center"></div>
             <div class="text-center pb-6 pt-2 px-4 w-full max-w-md mx-auto">
-                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑動查看更多</p>
+                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑动查看更多</p>
                 <a href="#" id="modal-line-btn" target="_blank" class="line-btn text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg transform active:scale-95 transition block w-full">
-                    立即 LINE 預定
+                    立即 LINE 预定
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- 核心邏輯 -->
+    <!-- 核心逻辑 -->
     <script>
         // ==========================================
-        // 👇 設定區 👇
+        // 👇 设定区 👇
         // ==========================================
-        
         const myLineId = "你的LINE_ID"; 
-        
-        // 🚀 你的 Google Form 試算表連結
         const googleSheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=1682452717&single=true&output=csv"; 
-        
         // ==========================================
 
         let profilesData = [];
@@ -182,7 +178,6 @@
         
         document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
 
-        // 🟢 智慧欄位讀取 (自動偵測)
         function getValue(item, keys) {
             const allKeys = Object.keys(item);
             for (let targetKey of keys) {
@@ -192,7 +187,6 @@
             return "";
         }
 
-        // 🟢 連結轉換引擎
         function getDriveId(url) {
             if (!url) return null;
             if (url.includes('drive.google.com')) {
@@ -239,7 +233,7 @@
                     },
                     error: () => {
                         loadingDiv.classList.add('hidden');
-                        container.innerHTML = `<div class="col-span-full text-center text-red-400">❌ 連線失敗，請檢查 CSV 連結是否正確。</div>`;
+                        container.innerHTML = `<div class="col-span-full text-center text-red-400">❌ 連線失敗，請檢查 CSV 連結。</div>`;
                         container.classList.remove('hidden');
                     }
                 });
@@ -262,9 +256,11 @@
                 const extra = getValue(item, ['加節', 'Extra', '加價']) || "500";
                 
                 const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
-                const firstImg = rawMainImg.split(',')[0].trim();
+                const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
                 const mainImg = convertDriveLink(firstImg);
                 
+                // 🟢 狀態邏輯 (Status Logic)
+                // 讀取「狀態」欄位，如果有「忙」或「Busy」就變紅
                 const status = getValue(item, ['Status', 'status', '狀態']).toLowerCase();
                 const isBusy = ["busy", "忙", "no", "x", "false"].some(k => status.includes(k));
                 
