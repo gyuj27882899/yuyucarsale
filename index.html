@@ -4,49 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- ✨ SEO 关键优化：标准网址 (Canonical URL) ✨ -->
+    <!-- 🟢 关键修复：让手机能顺利读取 Google Drive 图片 -->
+    <meta name="referrer" content="no-referrer">
+    
+    <!-- ✨ SEO 关键优化 ✨ -->
     <link rel="canonical" href="https://yuyucarsale.pages.dev/">
-
     <title>炮炮王 | 台东外约首选 | 100%真实照片 | 价格透明</title>
     <meta name="description" content="炮炮王提供台东最优质的外约与专属陪伴服务。台东外送茶、台东约会首选，拥有丰富真实照片档案。绝无隐藏费用，立即寻找您的台东地下情人，享受极致尊爵体验。">
     <meta name="keywords" content="台东茶, 台东外约, 台东外送茶, 台东约会, 台东地下情人, 炮炮王, 真实照片, 价格透明, 陪伴">
-    <meta name="author" content="炮炮王">
-    <meta name="robots" content="index, follow">
     
-    <!-- 社群分享设定 (Open Graph) -->
+    <!-- 社群分享设定 -->
     <meta property="og:title" content="炮炮王 | 台东外约首选">
     <meta property="og:description" content="台东地区满意度100% | 真实照片 | 价格透明">
     <meta property="og:image" content="https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1200">
-    <meta property="og:url" content="https://yuyucarsale.pages.dev/">
-    <meta property="og:type" content="website">
-    <meta property="og:locale" content="zh_TW">
-
-    <!-- ✨ 结构化资料 (JSON-LD) ✨ -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "ProfessionalService",
-      "name": "炮炮王 - 台东外约首选",
-      "image": "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1200",
-      "@id": "https://yuyucarsale.pages.dev/",
-      "url": "https://yuyucarsale.pages.dev/",
-      "telephone": "",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Taitung City",
-        "addressRegion": "Taitung County",
-        "addressCountry": "TW"
-      },
-      "priceRange": "$$",
-      "description": "提供台东地区最优质的约会、外约与专属陪伴服务，价格透明，照片真实。"
-    }
-    </script>
-
-    <!-- 样式库 -->
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <!-- CSV 解析库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <style>
@@ -56,7 +30,6 @@
         .line-btn { background-color: #06C755; }
         .line-btn:hover { background-color: #05b34c; }
         
-        /* 弹窗样式 */
         #gallery-modal { 
             backdrop-filter: blur(10px); 
             background-color: rgba(0, 0, 0, 0.95);
@@ -71,10 +44,13 @@
             position: relative;
             width: 100%;
             height: 100%;
-            min-height: 300px;
+            min-height: 50vh; /* 手机上影片高度 */
             background: #000;
             border-radius: 0.5rem;
             overflow: hidden;
+        }
+        @media (min-width: 768px) {
+            .video-wrapper { min-height: 400px; }
         }
         .video-wrapper iframe {
             position: absolute;
@@ -118,7 +94,7 @@
         <div class="flex justify-center mb-8">
             <div class="relative w-full max-w-md">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="搜寻车名、车价、关键字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
+                <input type="text" id="searchInput" placeholder="搜寻名字、关键字、价格..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
             </div>
         </div>
 
@@ -126,7 +102,6 @@
         <div id="loading" class="text-center py-10">
             <i class="fa-solid fa-circle-notch fa-spin text-3xl text-yellow-500"></i>
             <p class="text-gray-500 mt-2">资料读取中...</p>
-            <p class="text-xs text-gray-600 mt-1">若读取很久，请检查 Google Sheet 权限是否设为「知道连结的使用者」</p>
         </div>
 
         <!-- 卡片容器 -->
@@ -145,12 +120,16 @@
 
     <!-- 相册弹窗 -->
     <div id="gallery-modal" class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center">
-        <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2 drop-shadow-md">
+        <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2 drop-shadow-md bg-black/50 rounded-full">
             <i class="fa-solid fa-xmark"></i>
         </button>
         <div class="w-full max-w-5xl h-full flex flex-col justify-center relative">
             <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-white mb-2 text-center pt-4 drop-shadow-md"></h2>
-            <div id="modal-images-container" class="flex overflow-x-auto space-x-4 p-4 hide-scrollbar snap-x h-[65vh] md:h-[75vh] items-center"></div>
+            
+            <div id="modal-images-container" class="flex overflow-x-auto space-x-4 p-4 hide-scrollbar snap-x h-[75vh] items-center">
+                <!-- 图片影片将在这里生成 -->
+            </div>
+            
             <div class="text-center pb-6 pt-2 px-4 w-full max-w-md mx-auto">
                 <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑动查看更多</p>
                 <a href="#" id="modal-line-btn" target="_blank" class="line-btn text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg transform active:scale-95 transition block w-full">
@@ -178,6 +157,7 @@
         
         document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
 
+        // 智慧栏位读取
         function getValue(item, keys) {
             const allKeys = Object.keys(item);
             for (let targetKey of keys) {
@@ -187,21 +167,25 @@
             return "";
         }
 
+        // 🟢 强力 Google Drive ID 提取器 (支援所有乱七八糟的格式)
         function getDriveId(url) {
             if (!url) return null;
-            if (url.includes('drive.google.com')) {
-                const idMatch = url.match(/\/d\/(.*?)\/|id=(.*?)(&|$)/);
-                return idMatch ? (idMatch[1] || idMatch[2]) : null;
-            }
-            return null;
+            // 先把 #video 去掉
+            const cleanUrl = url.split('#')[0];
+            
+            // 尝试抓取 ID (支援 /d/ID, id=ID, open?id=ID)
+            const idMatch = cleanUrl.match(/[-\w]{25,}/);
+            return idMatch ? idMatch[0] : null;
         }
 
+        // 图片转换：强制使用 Thumbnail API (手机救星)
         function convertDriveLink(url) {
             const id = getDriveId(url);
             if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`; 
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
+        // 影片转换：使用 Preview 连结
         function convertDriveVideoLink(url) {
             const id = getDriveId(url);
             if (id) return `https://drive.google.com/file/d/${id}/preview`;
@@ -216,14 +200,14 @@
                     header: true,
                     complete: function(results) {
                         profilesData = results.data.filter(item => {
-                            const name = getValue(item, ['車名', 'Name', 'name', '名字', '名稱', '姓名']);
+                            const name = getValue(item, ['车名', 'Name', 'name', '名字']);
                             return name !== ""; 
                         });
                         
                         loadingDiv.classList.add('hidden');
                         
                         if (profilesData.length === 0) {
-                            container.innerHTML = `<div class="col-span-full text-center text-red-400 p-4 border border-red-500 rounded">❌ 0 筆資料。請確認表單有「車名」欄位。</div>`;
+                            container.innerHTML = `<div class="col-span-full text-center text-red-400 p-4 border border-red-500 rounded">❌ 0 笔资料。请确认表单有「车名」栏位。</div>`;
                             container.classList.remove('hidden');
                         } else {
                             container.classList.remove('hidden');
@@ -233,7 +217,7 @@
                     },
                     error: () => {
                         loadingDiv.classList.add('hidden');
-                        container.innerHTML = `<div class="col-span-full text-center text-red-400">❌ 連線失敗，請檢查 CSV 連結。</div>`;
+                        container.innerHTML = `<div class="col-span-full text-center text-red-400">❌ 连线失败。</div>`;
                         container.classList.remove('hidden');
                     }
                 });
@@ -249,29 +233,27 @@
             document.getElementById('no-results').classList.add('hidden');
 
             data.forEach((item, index) => {
-                const name = getValue(item, ['車名', 'Name', 'name', '名字', '姓名']);
-                const age = getValue(item, ['車齡', 'Age', 'age', '年齡', '歲數']) || "--";
-                const body = getValue(item, ['車身', 'Body', 'body', '身材', '三圍']) || "--";
-                const price = getValue(item, ['車價', 'Price', 'price', '價格', '金額']) || "0";
-                const extra = getValue(item, ['加節', 'Extra', '加價']) || "500";
+                const name = getValue(item, ['车名', 'Name', 'name', '名字']);
+                const age = getValue(item, ['车龄', 'Age', 'age', '年龄']) || "--";
+                const body = getValue(item, ['车身', 'Body', 'body', '身材']) || "--";
+                const price = getValue(item, ['车价', 'Price', 'price', '价格']) || "0";
                 
-                const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
+                // 图片处理
+                const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '上传']);
                 const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
+                // 封面如果是影片，也尝试转成缩图
                 const mainImg = convertDriveLink(firstImg);
                 
-                // 🟢 狀態邏輯 (Status Logic)
-                // 讀取「狀態」欄位，如果有「忙」或「Busy」就變紅
-                const status = getValue(item, ['Status', 'status', '狀態']).toLowerCase();
+                const status = getValue(item, ['Status', 'status', '状态']).toLowerCase();
                 const isBusy = ["busy", "忙", "no", "x", "false"].some(k => status.includes(k));
                 
                 let statusHtml = isBusy 
                     ? '<span class="absolute top-3 left-3 bg-red-600/90 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10 backdrop-blur-sm"><i class="fa-solid fa-ban mr-1"></i> 忙碌中</span>'
-                    : '<span class="absolute top-3 left-3 bg-green-500/90 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10 backdrop-blur-sm"><i class="fa-solid fa-check mr-1"></i> 可預約</span>';
+                    : '<span class="absolute top-3 left-3 bg-green-500/90 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10 backdrop-blur-sm"><i class="fa-solid fa-check mr-1"></i> 可预约</span>';
 
-                const lineMsg = encodeURIComponent(`你好，我想預定「${name}」，方案 $${price}/40分鐘`);
+                const lineMsg = encodeURIComponent(`你好，我想预定「${name}」，方案 $${price}/40分钟`);
                 const lineUrl = `https://line.me/ti/p/~${myLineId}?text=${lineMsg}`;
-
-                const seoAltText = `${name} - 台東外約 台東茶`;
+                const seoAltText = `${name} - 台东外约`;
 
                 const cardHtml = `
                     <div class="profile-card rounded-xl overflow-hidden shadow-lg relative group border border-gray-700">
@@ -279,7 +261,7 @@
                         <div class="h-96 overflow-hidden relative cursor-pointer" onclick="openGallery(${index})">
                             <img src="${mainImg}" alt="${seoAltText}" loading="lazy" 
                                  class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100" 
-                                 onerror="this.src='https://via.placeholder.com/600x800?text=載入中...';">
+                                 onerror="this.src='https://via.placeholder.com/600x800?text=图片读取中...';">
                             
                             <div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition flex items-center justify-center">
                                 <i class="fa-solid fa-expand text-white/80 opacity-0 group-hover:opacity-100 text-5xl drop-shadow-lg transform scale-50 group-hover:scale-100 transition duration-300"></i>
@@ -292,25 +274,21 @@
                             <div class="grid grid-cols-2 gap-3 mb-5 text-sm">
                                 <div class="bg-gray-800/50 p-2 rounded flex items-center justify-center border border-gray-700">
                                     <i class="fa-solid fa-cake-candles text-yellow-500 mr-2"></i> 
-                                    <span class="text-gray-200">車齡: ${age}</span>
+                                    <span class="text-gray-200">车龄: ${age}</span>
                                 </div>
                                 <div class="bg-gray-800/50 p-2 rounded flex items-center justify-center border border-gray-700">
                                     <i class="fa-solid fa-ruler-vertical text-yellow-500 mr-2"></i> 
-                                    <span class="text-gray-200">車身: ${body}</span>
+                                    <span class="text-gray-200">车身: ${body}</span>
                                 </div>
                             </div>
                             <div class="bg-gray-900 rounded-lg p-3 mb-5 border border-gray-700 shadow-inner">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-gray-400 text-sm">基本方案</span>
-                                    <span class="text-xl font-bold text-yellow-400">$${price} <span class="text-xs text-gray-500 font-normal">/ 40分鐘</span></span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs border-t border-gray-800 pt-1 mt-1">
-                                    <span class="text-gray-500">加節費用</span>
-                                    <span class="text-gray-400">+$${extra}</span>
+                                    <span class="text-xl font-bold text-yellow-400">$${price} <span class="text-xs text-gray-500 font-normal">/ 40分钟</span></span>
                                 </div>
                             </div>
                             <a href="${lineUrl}" target="_blank" onclick="event.stopPropagation()" class="line-btn w-full text-white font-black text-lg py-3 rounded-lg flex justify-center items-center shadow-lg hover:shadow-green-500/50 transition">
-                                <i class="fa-brands fa-line mr-2"></i> 立即 LINE 預定
+                                <i class="fa-brands fa-line mr-2"></i> 立即 LINE 预定
                             </a>
                         </div>
                     </div>
@@ -327,32 +305,38 @@
             const modalContainer = document.getElementById('modal-images-container');
             const modalLineBtn = document.getElementById('modal-line-btn');
             
-            const name = getValue(item, ['車名', 'Name', 'name', '名字']);
+            const name = getValue(item, ['车名', 'Name', 'name', '名字']);
             modalTitle.innerText = name;
             
             let mediaItems = [];
             
-            const rawMain = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
+            // 抓取所有图片链接 (可能包含 #video)
+            // 合并所有可能的图片栏位
+            const rawMain = getValue(item, ['MainImage', 'Image', 'image', '照片', '上传']);
             if(rawMain) {
                 const urls = rawMain.split(/[,，\s]+/).filter(u => u.length > 5);
                 mediaItems = mediaItems.concat(urls);
             }
             
-            const rawGallery = getValue(item, ['Gallery', '相冊', '相簿', '更多']);
+            const rawGallery = getValue(item, ['Gallery', '相册', '相簿', '更多']);
             if(rawGallery) {
                 const urls = rawGallery.split(/[,，\s]+/).filter(u => u.length > 5);
                 mediaItems = mediaItems.concat(urls);
             }
 
             if(mediaItems.length === 0) {
-                modalContainer.innerHTML = `<p class="text-white">暫無更多照片</p>`;
+                modalContainer.innerHTML = `<p class="text-white">暂无更多照片</p>`;
             } else {
                 modalContainer.innerHTML = mediaItems.map(url => {
-                    const isVideo = url.includes('#video') || url.endsWith('.mp4');
+                    // 🟢 智慧判断影片
+                    // 1. 如果网址包含 #video
+                    // 2. 如果网址结尾是 .mp4
+                    const isVideo = url.toLowerCase().includes('#video') || url.toLowerCase().endsWith('.mp4');
+                    
                     if (isVideo) {
-                        const videoUrl = convertDriveVideoLink(url.replace('#video', ''));
+                        const videoUrl = convertDriveVideoLink(url);
                         return `
-                             <div class="snap-center shrink-0 w-full md:w-auto h-full flex items-center justify-center p-2" style="min-width: 320px;">
+                             <div class="snap-center shrink-0 w-full md:w-auto h-full flex items-center justify-center p-2" style="min-width: 100%;">
                                 <div class="video-wrapper shadow-2xl border border-gray-700">
                                     <iframe src="${videoUrl}" allow="autoplay" allowfullscreen></iframe>
                                 </div>
@@ -361,7 +345,7 @@
                     } else {
                         const imgUrl = convertDriveLink(url);
                         return `
-                            <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-2">
+                            <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-2" style="min-width: 100%;">
                                 <img src="${imgUrl}" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl bg-black/50" 
                                      onerror="this.src='https://via.placeholder.com/600x800?text=Image+Error';">
                             </div>
@@ -370,8 +354,8 @@
                 }).join('');
             }
             
-            const price = getValue(item, ['車價', 'Price', 'price', '價格']);
-            const lineMsg = encodeURIComponent(`你好，我正在看「${name}」的照片，想預定方案 $${price}/40分鐘`);
+            const price = getValue(item, ['车价', 'Price', 'price', '价格']);
+            const lineMsg = encodeURIComponent(`你好，我正在看「${name}」的照片，想预定方案 $${price}/40分钟`);
             modalLineBtn.href = `https://line.me/ti/p/~${myLineId}?text=${lineMsg}`;
 
             modal.classList.remove('hidden');
@@ -391,13 +375,12 @@
         function performSearch() {
             const term = searchInput.value.toLowerCase().trim();
             const filtered = profilesData.filter(item => {
-                const name = getValue(item, ['車名', 'Name', 'name', '名字']).toLowerCase();
-                const tags = getValue(item, ['Tags', 'tags', '標籤', '關鍵字']).toLowerCase();
-                const body = getValue(item, ['車身', 'Body', 'body', '身材']).toLowerCase();
-                const age = getValue(item, ['車齡', 'Age', 'age', '年齡']).toLowerCase();
-                const price = getValue(item, ['車價', 'Price', 'price', '價格']).toLowerCase();
+                const name = getValue(item, ['车名', 'Name', 'name', '名字']).toLowerCase();
+                const tags = getValue(item, ['Tags', 'tags', '标签', '关键字']).toLowerCase();
+                const body = getValue(item, ['车身', 'Body', 'body', '身材']).toLowerCase();
+                const price = getValue(item, ['车价', 'Price', 'price', '价格']).toLowerCase();
 
-                return name.includes(term) || tags.includes(term) || body.includes(term) || age.includes(term) || price.includes(term);
+                return name.includes(term) || tags.includes(term) || body.includes(term) || price.includes(term);
             });
             currentDisplayedData = filtered;
             renderProfiles(filtered);
