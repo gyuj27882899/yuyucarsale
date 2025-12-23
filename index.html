@@ -2,9 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- 🟢 關鍵修復：讓手機 (iPhone/Android) 能順利讀取 Google Drive 圖片 -->
+    <!-- 🟢 關鍵修復：強制關閉 Referrer，解決手機無法讀取 Google Drive 圖片問題 -->
     <meta name="referrer" content="no-referrer">
     
     <!-- ✨ SEO 關鍵優化 ✨ -->
@@ -12,52 +12,49 @@
     <title>炮炮王 | 台東外約首選 | 100%真實照片 | 價格透明</title>
     <meta name="description" content="炮炮王提供台東最優質的外約與專屬陪伴服務。台東外送茶、台東約會首選，擁有豐富真實照片檔案。絕無隱藏費用，立即尋找您的台東地下情人，享受極致尊爵體驗。">
     <meta name="keywords" content="台東茶, 台東外約, 台東外送茶, 台東約會, 台東地下情人, 炮炮王, 真實照片, 價格透明, 陪伴">
+    <meta name="author" content="炮炮王">
+    <meta name="robots" content="index, follow">
     
     <!-- 社群分享設定 -->
     <meta property="og:title" content="炮炮王 | 台東外約首選">
     <meta property="og:description" content="台東地區滿意度100% | 真實照片 | 價格透明">
     <meta property="og:image" content="https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=1200">
-    
+    <meta property="og:url" content="https://yuyucarsale.pages.dev/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="zh_TW">
+
+    <!-- 樣式庫 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #1a1a1a; color: #fff; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #1a1a1a; color: #fff; -webkit-tap-highlight-color: transparent; }
         .profile-card { transition: transform 0.3s ease; background-color: #2d2d2d; }
-        .profile-card:hover { transform: translateY(-5px); }
+        .profile-card:active { transform: scale(0.98); } /* 手機點擊回饋 */
         .line-btn { background-color: #06C755; }
         .line-btn:hover { background-color: #05b34c; }
         
+        /* 彈窗樣式優化 */
         #gallery-modal { 
-            backdrop-filter: blur(10px); 
+            backdrop-filter: blur(15px); 
             background-color: rgba(0, 0, 0, 0.95);
         }
+        /* 隱藏捲軸但保留功能 */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .snap-x { scroll-snap-type: x mandatory; }
         .snap-center { scroll-snap-align: center; }
         
-        /* 影片容器 RWD 設定 */
-        .video-wrapper {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            min-height: 50vh;
-            background: #000;
-            border-radius: 0.5rem;
-            overflow: hidden;
-        }
-        @media (min-width: 768px) {
-            .video-wrapper { min-height: 400px; }
-        }
-        .video-wrapper iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        /* 影片播放器樣式 */
+        video {
+            max-height: 80vh;
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            object-fit: contain;
+            background-color: #000;
         }
     </style>
 </head>
@@ -94,7 +91,7 @@
         <div class="flex justify-center mb-8">
             <div class="relative w-full max-w-md">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="搜尋車名、車價、關鍵字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
+                <input type="text" id="searchInput" placeholder="搜尋車名、車價、關鍵字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500 text-base">
             </div>
         </div>
 
@@ -120,14 +117,17 @@
 
     <!-- 相簿彈窗 -->
     <div id="gallery-modal" class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center">
-        <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2 drop-shadow-md bg-black/50 rounded-full">
+        <!-- 關閉按鈕 -->
+        <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2 drop-shadow-md bg-black/50 rounded-full w-12 h-12 flex items-center justify-center">
             <i class="fa-solid fa-xmark"></i>
         </button>
+        
         <div class="w-full max-w-5xl h-full flex flex-col justify-center relative">
-            <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-white mb-2 text-center pt-4 drop-shadow-md"></h2>
+            <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-white mb-4 text-center pt-4 drop-shadow-md"></h2>
             
+            <!-- 圖片影片滑動區 -->
             <div id="modal-images-container" class="flex overflow-x-auto space-x-4 p-4 hide-scrollbar snap-x h-[75vh] items-center">
-                <!-- 圖片影片將在這裡生成 -->
+                <!-- 內容由 JS 生成 -->
             </div>
             
             <div class="text-center pb-6 pt-2 px-4 w-full max-w-md mx-auto">
@@ -146,7 +146,7 @@
         // ==========================================
         const myLineId = "你的LINE_ID"; 
         
-        // Google Form 回應的 CSV 連結
+        // 🚀 你的 Google Form 試算表連結
         const googleSheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=1682452717&single=true&output=csv"; 
         // ==========================================
 
@@ -159,7 +159,7 @@
         
         document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
 
-        // 🟢 智慧欄位讀取：只要欄位名稱包含關鍵字就會抓取 (支援繁體)
+        // 🟢 智慧欄位讀取
         function getValue(item, keys) {
             const allKeys = Object.keys(item);
             for (let targetKey of keys) {
@@ -169,28 +169,28 @@
             return "";
         }
 
-        // 🟢 連結轉換引擎 (處理 Google Drive 圖片/影片 ID)
+        // 🟢 Google Drive ID 提取器
         function getDriveId(url) {
             if (!url) return null;
-            // 移除可能存在的 #video 標記
+            // 移除 #video 標記和參數
             const cleanUrl = url.split('#')[0];
-            
-            // 嘗試抓取 ID (支援 /d/ID, id=ID, open?id=ID)
             const idMatch = cleanUrl.match(/[-\w]{25,}/);
             return idMatch ? idMatch[0] : null;
         }
 
-        // 圖片轉換：強制使用 Thumbnail API (解決 iPhone HEIC 和載入慢的問題)
+        // 🟢 圖片轉換：使用 Thumbnail API (手機讀取必備)
         function convertDriveLink(url) {
             const id = getDriveId(url);
             if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`; 
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
-        // 影片轉換：使用 Preview 連結
+        // 🟢 影片轉換：使用直連模式 (支援自動播放)
+        // 舊版是 /preview (網頁預覽)，手機無法自動播。
+        // 新版改為 export=download，配合 <video> 標籤實現串流播放。
         function convertDriveVideoLink(url) {
             const id = getDriveId(url);
-            if (id) return `https://drive.google.com/file/d/${id}/preview`;
+            if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
             return url;
         }
 
@@ -202,8 +202,7 @@
                     header: true,
                     complete: function(results) {
                         profilesData = results.data.filter(item => {
-                            // 搜尋關鍵字增強：車名, 名字, 姓名, 暱稱
-                            const name = getValue(item, ['車名', 'Name', 'name', '名字', '姓名', '暱稱']);
+                            const name = getValue(item, ['車名', 'Name', 'name', '名字', '姓名']);
                             return name !== ""; 
                         });
                         
@@ -236,15 +235,13 @@
             document.getElementById('no-results').classList.add('hidden');
 
             data.forEach((item, index) => {
-                // 👇 對應 Google 表單欄位 (繁體增強版) 👇
-                const name = getValue(item, ['車名', 'Name', 'name', '名字', '姓名', '暱稱']);
-                const age = getValue(item, ['車齡', 'Age', 'age', '年齡', '歲數']) || "--";
-                const body = getValue(item, ['車身', 'Body', 'body', '身材', '三圍', '身高']) || "--";
-                const price = getValue(item, ['車價', 'Price', 'price', '價格', '金額', '費用']) || "0";
-                const extra = getValue(item, ['加節', 'Extra', '加價', '額外']) || "500";
+                const name = getValue(item, ['車名', 'Name', 'name', '名字']);
+                const age = getValue(item, ['車齡', 'Age', 'age', '年齡']) || "--";
+                const body = getValue(item, ['車身', 'Body', 'body', '身材']) || "--";
+                const price = getValue(item, ['車價', 'Price', 'price', '價格']) || "0";
                 
-                // Form 上傳圖片
-                const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳', '檔案']);
+                // Form 上傳圖片 (第一張)
+                const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
                 const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
                 const mainImg = convertDriveLink(firstImg);
                 
@@ -265,7 +262,7 @@
                         <div class="h-96 overflow-hidden relative cursor-pointer" onclick="openGallery(${index})">
                             <img src="${mainImg}" alt="${seoAltText}" loading="lazy" 
                                  class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100" 
-                                 onerror="this.src='https://via.placeholder.com/600x800?text=圖片讀取中...';">
+                                 onerror="this.src='https://via.placeholder.com/600x800?text=圖片載入中...';">
                             
                             <div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition flex items-center justify-center">
                                 <i class="fa-solid fa-expand text-white/80 opacity-0 group-hover:opacity-100 text-5xl drop-shadow-lg transform scale-50 group-hover:scale-100 transition duration-300"></i>
@@ -289,10 +286,6 @@
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-gray-400 text-sm">基本方案</span>
                                     <span class="text-xl font-bold text-yellow-400">$${price} <span class="text-xs text-gray-500 font-normal">/ 40分鐘</span></span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs border-t border-gray-800 pt-1 mt-1">
-                                    <span class="text-gray-500">加節費用</span>
-                                    <span class="text-gray-400">+$${extra}</span>
                                 </div>
                             </div>
                             <a href="${lineUrl}" target="_blank" onclick="event.stopPropagation()" class="line-btn w-full text-white font-black text-lg py-3 rounded-lg flex justify-center items-center shadow-lg hover:shadow-green-500/50 transition">
@@ -318,8 +311,8 @@
             
             let mediaItems = [];
             
-            // 抓取圖片欄位 (支援逗號分隔的多張圖)
-            const rawMain = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳', '檔案']);
+            // 抓取所有圖片/影片欄位
+            const rawMain = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
             if(rawMain) {
                 const urls = rawMain.split(/[,，\s]+/).filter(u => u.length > 5);
                 mediaItems = mediaItems.concat(urls);
@@ -335,13 +328,16 @@
                 modalContainer.innerHTML = `<p class="text-white">暫無更多照片</p>`;
             } else {
                 modalContainer.innerHTML = mediaItems.map(url => {
-                    const isVideo = url.toLowerCase().includes('#video') || url.toLowerCase().endsWith('.mp4');
+                    // 🟢 智慧判斷：如果連結包含 #video，視為影片
+                    const isVideo = url.toLowerCase().includes('#video');
+                    
                     if (isVideo) {
-                        const videoUrl = convertDriveVideoLink(url.replace('#video', ''));
+                        const videoUrl = convertDriveVideoLink(url);
+                        // 影片使用 <video> 標籤，並加上 playsinline (iOS必要) 和 muted (自動播放必要)
                         return `
                              <div class="snap-center shrink-0 w-full md:w-auto h-full flex items-center justify-center p-2" style="min-width: 100%;">
-                                <div class="video-wrapper shadow-2xl border border-gray-700">
-                                    <iframe src="${videoUrl}" allow="autoplay" allowfullscreen></iframe>
+                                <div class="flex items-center justify-center w-full h-full">
+                                    <video src="${videoUrl}" controls autoplay muted loop playsinline webkit-playsinline></video>
                                 </div>
                             </div>
                         `;
@@ -367,6 +363,7 @@
 
         function closeGallery() {
             modal.classList.add('hidden');
+            // 清空內容以停止影片播放
             document.getElementById('modal-images-container').innerHTML = '';
             document.body.style.overflow = 'auto';
         }
@@ -381,10 +378,9 @@
                 const name = getValue(item, ['車名', 'Name', 'name', '名字']).toLowerCase();
                 const tags = getValue(item, ['Tags', 'tags', '標籤', '關鍵字']).toLowerCase();
                 const body = getValue(item, ['車身', 'Body', 'body', '身材']).toLowerCase();
-                const age = getValue(item, ['車齡', 'Age', 'age', '年齡']).toLowerCase();
                 const price = getValue(item, ['車價', 'Price', 'price', '價格']).toLowerCase();
 
-                return name.includes(term) || tags.includes(term) || body.includes(term) || age.includes(term) || price.includes(term);
+                return name.includes(term) || tags.includes(term) || body.includes(term) || price.includes(term);
             });
             currentDisplayedData = filtered;
             renderProfiles(filtered);
