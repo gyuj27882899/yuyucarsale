@@ -4,391 +4,295 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
+    <title>炮炮王 | 系統修復中</title>
+
+    <!-- 1. 錯誤攔截器 (放在最上面，一出錯馬上顯示) -->
+    <style>
+        #debug-console {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: rgba(0,0,0,0.9); color: #ff4444;
+            padding: 10px; z-index: 9999; font-size: 12px;
+            border-bottom: 2px solid red; font-family: monospace;
+        }
+        /* 基礎樣式 (防止 Tailwind 載入失敗時版面全毀) */
+        body { background-color: #1a1a1a; color: white; font-family: sans-serif; margin: 0; }
+        .card { background: #333; margin-bottom: 15px; border-radius: 8px; overflow: hidden; }
+        .card img { width: 100%; height: 300px; object-fit: cover; }
+        .p-4 { padding: 15px; }
+        .hidden { display: none !important; }
+    </style>
     
-    <title>炮炮王 | 台东外约首选</title>
-    
-    <!-- 样式库 -->
+    <script>
+        window.onerror = function(msg, url, line) {
+            var console = document.getElementById('debug-console');
+            console.style.display = 'block';
+            console.innerHTML += "❌ 錯誤: " + msg + " (第 " + line + " 行)<br>";
+            return false;
+        };
+    </script>
+
+    <!-- 外部資源 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
-    <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #1a1a1a; color: #fff; -webkit-tap-highlight-color: transparent; }
-        
-        /* 卡片样式 */
-        .profile-card { background-color: #2d2d2d; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.2s; }
-        .profile-card:active { transform: scale(0.98); }
-        .line-btn { background-color: #06C755; transition: 0.2s; }
-        .line-btn:active { background-color: #05a045; }
-
-        /* 弹窗样式 */
-        #gallery-modal { 
-            position: fixed; inset: 0; z-index: 50;
-            background-color: rgba(0, 0, 0, 0.98); 
-            display: flex; flex-direction: column; 
-            align-items: center; justify-content: center;
-        }
-        
-        /* 媒体容器 */
-        .media-scroll-container {
-            width: 100%;
-            height: 70vh; 
-            display: flex;
-            align-items: center;
-            overflow-x: auto; 
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            gap: 10px;
-            padding: 0 10px;
-        }
-
-        .media-item {
-            min-width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            scroll-snap-align: center;
-            position: relative;
-        }
-
-        .gallery-img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            border-radius: 8px;
-        }
-
-        /* 影片容器 */
-        .video-wrapper {
-            width: 100%;
-            max-width: 800px;
-            height: 100%;
-            background: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #444;
-        }
-        
-        .video-facade {
-            position: absolute; inset: 0; z-index: 20;
-            cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            background-color: #000;
-        }
-        .video-facade img { width: 100%; height: 100%; object-fit: contain; opacity: 0.7; }
-        .video-content { width: 100%; height: 100%; z-index: 10; }
-        iframe { width: 100%; height: 100%; border: none; }
-    </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
+<body>
 
-    <!-- 顶部导航 -->
-    <nav class="bg-gray-800 shadow-lg sticky top-0 z-40 border-b border-gray-700 px-4 py-3 flex justify-between items-center">
-        <div class="flex items-center space-x-2">
-            <i class="fa-solid fa-crown text-2xl text-yellow-500"></i>
-            <span class="text-xl font-bold tracking-wider">炮炮王</span>
-        </div>
-        <a href="#" id="navLineBtn" target="_blank" class="line-btn text-white px-4 py-2 rounded-full text-sm font-bold flex items-center">
-            <i class="fa-brands fa-line text-lg mr-2"></i> 客服
-        </a>
+    <!-- 除錯訊息區 -->
+    <div id="debug-console"></div>
+
+    <!-- 導航 -->
+    <nav class="bg-gray-800 p-4 sticky top-0 z-40 flex justify-between items-center shadow-lg">
+        <div class="text-xl font-bold text-yellow-500"><i class="fa-solid fa-crown"></i> 炮炮王</div>
+        <a href="#" id="navLineBtn" target="_blank" class="bg-white text-black px-4 py-1 rounded-full text-sm font-bold">客服</a>
     </nav>
 
-    <!-- 列表区 -->
-    <section class="max-w-6xl mx-auto px-4 py-6 flex-grow">
-        <div class="mb-6">
-            <input type="text" id="searchInput" placeholder="搜寻名字、关键字..." class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-full text-white text-base">
-        </div>
-
-        <div id="loading" class="text-center py-10 text-gray-400">
-            <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2"></i><br>资料读取中...
-        </div>
+    <!-- 內容區 -->
+    <div class="max-w-4xl mx-auto p-4">
         
-        <!-- 🚨 诊断讯息区 (预设隐藏，出错才显示) -->
-        <div id="debug-panel" class="hidden p-4 mb-6 bg-red-900/50 border border-red-500 rounded text-red-200 text-sm text-left font-mono overflow-auto max-h-64">
-            <h3 class="font-bold text-lg mb-2 text-white"><i class="fa-solid fa-triangle-exclamation"></i> 系统诊断报告</h3>
-            <p id="debug-msg">...</p>
-            <div class="mt-2 pt-2 border-t border-red-700">
-                <p>侦测到的栏位名称：</p>
-                <p id="debug-headers" class="text-yellow-400 break-words">...</p>
-            </div>
+        <!-- 搜尋 -->
+        <div class="mb-6">
+            <input type="text" id="searchInput" placeholder="搜尋車名、關鍵字..." 
+                   class="w-full p-3 bg-gray-700 border border-gray-600 rounded text-white">
         </div>
 
-        <div id="profiles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
-        <div id="no-results" class="hidden text-center py-10 text-gray-500">查无资料</div>
-    </section>
+        <!-- 狀態提示 -->
+        <div id="status-msg" class="text-center py-10 text-gray-400">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl"></i><br>
+            資料庫連線中...
+        </div>
 
-    <footer class="bg-black text-gray-500 py-6 text-center text-xs border-t border-gray-800">
-        &copy; 2025 炮炮王. All Rights Reserved.
-    </footer>
+        <!-- 列表 -->
+        <div id="list-area" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden"></div>
+    </div>
 
-    <!-- 相簿弹窗 -->
-    <div id="gallery-modal" class="hidden">
-        <button onclick="closeGallery()" class="absolute top-4 left-4 text-white z-50 px-4 py-2 bg-gray-800/80 rounded-full flex items-center border border-gray-600">
-            <i class="fa-solid fa-arrow-left mr-2"></i> 返回
+    <!-- 彈窗 (全螢幕) -->
+    <div id="popup" class="fixed inset-0 bg-black z-50 hidden flex-col justify-center items-center">
+        <button onclick="closePopup()" class="absolute top-4 left-4 text-white bg-gray-700 px-4 py-2 rounded-full z-50">
+            <i class="fa-solid fa-arrow-left"></i> 返回
         </button>
+        
+        <h2 id="popup-title" class="absolute top-4 w-full text-center font-bold text-lg pointer-events-none mt-2"></h2>
 
-        <h2 id="modal-title" class="text-xl font-bold mb-2 mt-12 text-center px-4"></h2>
-        <div id="modal-images-container" class="media-scroll-container"></div>
+        <div id="popup-content" class="w-full h-full flex overflow-x-auto snap-x snap-mandatory items-center">
+            <!-- 圖片會塞在這裡 -->
+        </div>
 
-        <div class="w-full max-w-xs px-4 mt-4 pb-4">
-            <p class="text-center text-xs text-gray-400 mb-2">左右滑动查看更多 | 点击播放影片</p>
-            <a href="#" id="modal-line-btn" target="_blank" class="line-btn w-full py-3 rounded-full text-center font-bold block">
-                立即 LINE 预定
+        <div class="absolute bottom-8 w-full px-4">
+            <a href="#" id="popup-line-btn" class="block w-full bg-green-600 text-white text-center py-3 rounded-full font-bold shadow-lg">
+                立即預約
             </a>
         </div>
     </div>
 
     <script>
+        // 👇 設定區 👇
         const myLineId = "你的LINE_ID"; 
-        // 👇 你的 CSV 连结
-        const googleSheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=1682452717&single=true&output=csv";
-        
-        let profilesData = [];
-        let currentDisplayedData = [];
-        const container = document.getElementById('profiles-container');
-        const searchInput = document.getElementById('searchInput');
-        const modal = document.getElementById('gallery-modal');
-        const debugPanel = document.getElementById('debug-panel');
-        
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=1682452717&single=true&output=csv";
+        // -----------------------
+
+        const statusMsg = document.getElementById('status-msg');
+        const listArea = document.getElementById('list-area');
+        const popup = document.getElementById('popup');
+        const debugConsole = document.getElementById('debug-console');
+        let allData = [];
+
         document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
 
-        // 🟢 强力智慧栏位读取 (自动去除空格、转小写)
-        function getValue(item, keys) {
-            // 先将 item 的所有 key 做正规化处理 (去除前后空格)
-            const normalizedItem = {};
-            Object.keys(item).forEach(k => {
-                normalizedItem[k.trim()] = item[k];
+        // 1. 啟動
+        init();
+
+        function init() {
+            // 強制加上時間戳記，避免手機快取舊的壞資料
+            const url = csvUrl + "&t=" + new Date().getTime();
+            
+            Papa.parse(url, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    console.log("讀取成功", results);
+                    
+                    if (results.data.length === 0) {
+                        showError("⚠️ 連線成功，但 Excel 是空的！");
+                        return;
+                    }
+
+                    // 顯示抓到的欄位名稱 (除錯用)
+                    const headers = Object.keys(results.data[0]);
+                    debugConsole.style.display = 'block';
+                    debugConsole.style.background = '#004400'; // 綠色代表成功
+                    debugConsole.style.color = '#fff';
+                    debugConsole.style.borderBottom = 'none';
+                    debugConsole.innerHTML = "✅ 系統正常！讀到欄位: " + headers.join(", ");
+                    setTimeout(() => { debugConsole.style.display = 'none'; }, 5000); // 5秒後隱藏
+
+                    // 過濾資料
+                    allData = results.data.filter(item => {
+                        return getValue(item, ['車名', '名字', '姓名', 'Name']);
+                    });
+
+                    if (allData.length > 0) {
+                        statusMsg.classList.add('hidden');
+                        listArea.classList.remove('hidden');
+                        render(allData);
+                    } else {
+                        showError("⚠️ 找不到「車名」欄位，請檢查 Excel 標題。");
+                    }
+                },
+                error: function(err) {
+                    showError("❌ 連線失敗: " + err.message);
+                }
             });
-            
-            const allKeys = Object.keys(normalizedItem);
-            
-            for (let targetKey of keys) {
-                // 模糊比对：只要标题包含关键字就抓
-                const foundKey = allKeys.find(k => k.toLowerCase().includes(targetKey.toLowerCase()));
-                if (foundKey && normalizedItem[foundKey]) return normalizedItem[foundKey].trim();
+        }
+
+        function showError(msg) {
+            statusMsg.innerHTML = `<span class="text-red-500">${msg}</span>`;
+            debugConsole.style.display = 'block';
+            debugConsole.innerHTML += msg + "<br>";
+        }
+
+        // 輔助：讀取欄位 (自動忽略大小寫)
+        function getValue(item, keys) {
+            const allKeys = Object.keys(item);
+            for (let target of keys) {
+                const found = allKeys.find(k => k.toLowerCase().includes(target.toLowerCase()));
+                if (found && item[found]) return item[found].trim();
             }
             return "";
         }
 
-        function getDriveId(url) {
-            if (!url) return null;
-            const cleanUrl = url.split('#')[0].split('?')[0]; 
-            let match = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
-            if (match) return match[1];
-            match = cleanUrl.match(/id=([a-zA-Z0-9_-]{25,})/);
-            if (match) return match[1];
-            return null;
+        // 輔助：轉換圖片連結 (強制用縮圖 API)
+        function getImgUrl(url) {
+            if (!url) return "https://via.placeholder.com/600x400?text=No+Image";
+            const match = url.match(/[-\w]{25,}/);
+            const id = match ? match[0] : null;
+            if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+            return url;
         }
 
-        function convertDriveLink(url) {
-            const id = getDriveId(url);
-            if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`; 
-            return url || "https://via.placeholder.com/600x800?text=无图片";
-        }
-
-        window.loadIframe = function(element, videoId) {
-            const contentDiv = element.parentElement.querySelector('.video-content');
-            contentDiv.innerHTML = `<iframe src="https://drive.google.com/file/d/${videoId}/preview?autoplay=1" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-            element.style.display = 'none';
-        }
-
-        function init() {
-            if (googleSheetCsvUrl.startsWith('http')) {
-                const cacheBuster = (googleSheetCsvUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+        // 2. 渲染畫面
+        function render(data) {
+            listArea.innerHTML = "";
+            data.forEach((item, idx) => {
+                const name = getValue(item, ['車名', '名字']);
+                const price = getValue(item, ['車價', '價格']);
+                const age = getValue(item, ['車齡', '年齡']) || "--";
+                const body = getValue(item, ['車身', '身材']) || "--";
+                const origin = getValue(item, ['車籍', '地點']) || "台東";
                 
-                console.log("开始读取 CSV...");
-                
-                Papa.parse(googleSheetCsvUrl + cacheBuster, {
-                    download: true, 
-                    header: true,
-                    skipEmptyLines: true, // 忽略空行
-                    complete: function(results) {
-                        console.log("CSV 读取完成", results);
-                        
-                        // 1. 检查是否有资料
-                        if (!results.data || results.data.length === 0) {
-                            showError("连线成功，但 CSV 是空的。请确认 Google Sheet 有资料并已发布。");
-                            return;
-                        }
+                // 圖片處理
+                const rawImg = getValue(item, ['照片', '圖片', 'Image']);
+                const firstImg = rawImg.split(',')[0];
+                const imgUrl = getImgUrl(firstImg);
 
-                        // 2. 检查栏位名称
-                        const headers = Object.keys(results.data[0]);
-                        // 显示抓到的栏位给用户看
-                        document.getElementById('debug-headers').innerText = headers.map(h => `[${h}]`).join(' ');
+                // 狀態
+                const status = getValue(item, ['狀態', 'Status']);
+                const isBusy = status.includes("忙") || status.includes("busy");
+                const badge = isBusy 
+                    ? `<span class="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded">忙碌中</span>`
+                    : `<span class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">可預約</span>`;
 
-                        // 3. 过滤有效资料
-                        profilesData = results.data.filter(item => {
-                            // 只要有「车名、名字、姓名、Name」其中一个就算有效
-                            const name = getValue(item, ['车名', '名字', '姓名', 'Name']);
-                            return name !== ""; 
-                        });
-                        
-                        document.getElementById('loading').classList.add('hidden');
-                        
-                        if (profilesData.length > 0) {
-                            container.classList.remove('hidden');
-                            currentDisplayedData = profilesData;
-                            renderProfiles(profilesData);
-                        } else {
-                            // 有资料但筛选后是空的，代表栏位对应错误
-                            showError(`读取到 ${results.data.length} 笔原始资料，但找不到「车名」栏位。请检查下方的「侦测到的栏位名称」是否有「车名」或「名字」。`);
-                        }
-                    },
-                    error: (err) => {
-                        showError(`连线失败: ${err.message}`);
-                    }
-                });
-            } else {
-                showError("CSV 连结格式错误 (必须以 http 开头)");
-            }
-        }
-
-        function showError(msg) {
-            document.getElementById('loading').classList.add('hidden');
-            debugPanel.classList.remove('hidden');
-            document.getElementById('debug-msg').innerText = msg;
-        }
-
-        function renderProfiles(data) {
-            container.innerHTML = '';
-            data.forEach((item, index) => {
-                const name = getValue(item, ['车名', '名字', '姓名']);
-                const age = getValue(item, ['车龄', '年齡']) || "--";
-                const body = getValue(item, ['车身', '身材']) || "--";
-                const origin = getValue(item, ['车籍', '地点']) || "台东"; 
-                const price = getValue(item, ['车价', '价格']) || "0";
-                
-                const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '图片', '上传']);
-                const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
-                const mainImg = convertDriveLink(firstImg);
-                
-                const status = getValue(item, ['Status', '状态', '目前状态', '忙碌']).toLowerCase();
-                const isBusy = ["busy", "忙", "no", "x", "false", "有事", "预约", "售出"].some(k => status.includes(k));
-                
-                let statusHtml = isBusy 
-                    ? '<span class="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10">忙碌中</span>'
-                    : '<span class="absolute top-3 left-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10">可预约</span>';
-
-                const lineMsg = encodeURIComponent(`你好，我想预定「${name}」，方案 $${price}/40分钟`);
-                const lineUrl = `https://line.me/ti/p/~${myLineId}?text=${lineMsg}`;
-
-                const cardHtml = `
-                    <div class="profile-card group relative">
-                        ${statusHtml}
-                        <div class="h-80 overflow-hidden relative cursor-pointer" onclick="openGallery(${index})">
-                            <img src="${mainImg}" loading="lazy" class="w-full h-full object-cover transition duration-500 group-hover:scale-110" onerror="this.src='https://via.placeholder.com/600x800?text=无图片'">
-                            <div class="absolute bottom-0 w-full bg-gradient-to-t from-black to-transparent p-4 pt-12">
-                                <h3 class="text-2xl font-bold text-white">${name}</h3>
+                const html = `
+                    <div class="card relative" onclick="openPopup(${idx})">
+                        ${badge}
+                        <img src="${imgUrl}" loading="lazy">
+                        <div class="p-4 bg-gray-800">
+                            <h3 class="text-xl font-bold text-white mb-2">${name}</h3>
+                            <div class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>${age}歲 / ${body}</span>
+                                <span>${origin}</span>
                             </div>
-                        </div>
-                        <div class="p-4 bg-[#2d2d2d]">
-                            <div class="grid grid-cols-2 gap-2 mb-4 text-sm text-gray-300">
-                                <div class="bg-gray-800 p-2 rounded text-center">车龄: ${age}</div>
-                                <div class="bg-gray-800 p-2 rounded text-center">车籍: ${origin}</div>
-                                <div class="bg-gray-800 p-2 rounded text-center col-span-2">车身: ${body}</div>
-                            </div>
-                            <div class="bg-gray-900/50 rounded-lg p-3 mb-4 border border-gray-700">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-400">基本方案</span>
-                                    <span class="text-xl font-bold text-yellow-400">$${price}</span>
-                                </div>
-                            </div>
-                            <a href="${lineUrl}" target="_blank" onclick="event.stopPropagation()" class="line-btn w-full text-white font-bold py-3 rounded-lg flex justify-center items-center shadow-lg">
-                                <i class="fa-brands fa-line mr-2"></i> 立即 LINE 预定
-                            </a>
+                            <div class="text-yellow-400 font-bold text-lg">$${price}</div>
                         </div>
                     </div>
                 `;
-                container.innerHTML += cardHtml;
+                listArea.innerHTML += html;
             });
         }
 
-        function openGallery(index) {
-            const item = currentDisplayedData[index];
-            if(!item) return;
-
-            document.getElementById('modal-title').innerText = getValue(item, ['车名', '名字']);
-            const modalContainer = document.getElementById('modal-images-container');
-            modalContainer.innerHTML = '';
-
-            let mediaItems = [];
+        // 3. 彈窗邏輯
+        window.openPopup = function(idx) {
+            // 每次重新抓取正確的資料 (避免搜尋後錯亂)
+            // 這裡用簡單的全域搜尋 (正式版建議用 ID)
+            const item = allData[idx]; 
+            // 注意：如果有搜尋過濾，這裡 idx 會對不上，為求穩暫時先這樣
+            // 如果您有搜尋，建議用 render 時把完整物件存入 DOM
             
-            const rawMain = getValue(item, ['MainImage', '照片', '图片', '上传']);
-            if(rawMain) mediaItems = mediaItems.concat(rawMain.split(/[,，\s]+/).filter(u => u.length > 5));
+            // 簡單修復：目前不支援搜尋後的彈窗精準定位 (先求顯示)
+            // 為了讓搜尋後也能點對，我們改一下 render
+            // (為了代碼簡潔，這版暫時用 idx，搜尋功能會重繪，idx 會變，需要注意)
+            // 修正：我們改用 currentData
             
-            const rawVideo = getValue(item, ['Video', '影片', '视频']);
-            if(rawVideo) mediaItems = mediaItems.concat(rawVideo.split(/[,，\s]+/).filter(u => u.length > 5).map(u => u + "#video"));
+            const currentItem = currentData[idx];
+            if (!currentItem) return;
 
-            if(mediaItems.length === 0) {
-                modalContainer.innerHTML = `<p class="text-white w-full text-center">暂无更多照片</p>`;
-            } else {
-                modalContainer.innerHTML = mediaItems.map(url => {
-                    const isVideo = url.toLowerCase().includes('#video') || url.toLowerCase().endsWith('.mp4');
+            document.getElementById('popup-title').innerText = getValue(currentItem, ['車名', '名字']);
+            const content = document.getElementById('popup-content');
+            content.innerHTML = "";
+
+            // 圖片
+            const rawImg = getValue(currentItem, ['照片', '圖片']);
+            if (rawImg) {
+                rawImg.split(',').forEach(url => {
+                    if (url.trim() == "") return;
                     
-                    if (isVideo) {
-                        const videoId = getDriveId(url);
-                        const thumbUrl = convertDriveLink(url);
-                        return `
-                             <div class="media-item">
-                                <div class="video-wrapper">
-                                    <div class="video-facade" onclick="loadIframe(this, '${videoId}')">
-                                        <img src="${thumbUrl}" onerror="this.src='https://via.placeholder.com/800x600/000000/FFFFFF?text=点击播放'">
-                                        <div class="play-icon-overlay">
-                                            <i class="fa-solid fa-play text-white text-6xl shadow-lg"></i>
-                                        </div>
-                                    </div>
-                                    <div class="video-content bg-black flex justify-center items-center"></div>
-                                </div>
-                            </div>
+                    const div = document.createElement('div');
+                    div.className = "min-w-full h-full flex justify-center items-center p-2 relative snap-center";
+                    
+                    // 偵測影片
+                    if (url.includes("#video") || url.includes(".mp4")) {
+                        // 影片：用假封面 -> 點擊去外部播放 (最穩)
+                        const id = url.match(/[-\w]{25,}/)[0];
+                        const thumb = `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+                        const videoLink = `https://drive.google.com/file/d/${id}/preview`; // 預覽連結
+                        
+                        div.innerHTML = `
+                            <a href="${videoLink}" target="_blank" class="relative w-full h-full flex justify-center items-center">
+                                <img src="${thumb}" class="max-w-full max-h-full object-contain opacity-50">
+                                <i class="fa-solid fa-play-circle text-6xl text-white absolute"></i>
+                                <p class="absolute bottom-10 text-white text-sm">點擊播放影片</p>
+                            </a>
                         `;
                     } else {
-                        const imgUrl = convertDriveLink(url);
-                        return `
-                            <div class="media-item">
-                                <img src="${imgUrl}" class="gallery-img">
-                            </div>
-                        `;
+                        // 圖片
+                        const src = getImgUrl(url);
+                        div.innerHTML = `<img src="${src}" class="max-w-full max-h-full object-contain rounded">`;
                     }
-                }).join('');
+                    content.appendChild(div);
+                });
             }
-            
-            const price = getValue(item, ['車價', '價格']);
-            const name = getValue(item, ['車名', '名字']);
-            const lineMsg = encodeURIComponent(`你好，我正在看「${name}」的照片，想预定方案 $${price}/40分鐘`);
-            document.getElementById('modal-line-btn').href = `https://line.me/ti/p/~${myLineId}?text=${lineMsg}`;
 
-            modal.style.display = "flex"; 
+            // LINE 按鈕
+            const name = getValue(currentItem, ['車名', '名字']);
+            const price = getValue(currentItem, ['車價', '價格']);
+            document.getElementById('popup-line-btn').href = `https://line.me/ti/p/~${myLineId}?text=我想預約 ${name} ${price}`;
+
+            popup.classList.remove('hidden');
+            popup.classList.add('flex');
             document.body.style.overflow = 'hidden';
         }
 
-        window.closeModal = function() {
-            modal.style.display = "none";
-            document.getElementById('modal-images-container').innerHTML = '';
+        window.closePopup = function() {
+            popup.classList.add('hidden');
+            popup.classList.remove('flex');
             document.body.style.overflow = 'auto';
         }
-        
-        modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
 
-        searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase().trim();
-            const filtered = profilesData.filter(item => {
-                const name = getValue(item, ['车名', '名字']).toLowerCase();
-                const body = getValue(item, ['车身', '身材']).toLowerCase();
-                const origin = getValue(item, ['车籍', '地点']).toLowerCase();
-                const price = getValue(item, ['车价', '价格']).toLowerCase();
-                return name.includes(term) || body.includes(term) || origin.includes(term) || price.includes(term);
+        // 搜尋功能
+        let currentData = [];
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            currentData = allData.filter(item => {
+                return Object.values(item).join(" ").toLowerCase().includes(term);
             });
-            currentDisplayedData = filtered;
-            renderProfiles(filtered);
+            render(currentData);
         });
 
-        init();
+        // 初始賦值
+        setTimeout(() => { currentData = allData; }, 1000);
+
     </script>
 </body>
 </html>
