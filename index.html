@@ -223,11 +223,21 @@
             return "";
         }
 
+        // 🟢 強力 ID 提取 (修復影片讀取)
         function getDriveId(url) {
             if (!url) return null;
-            const cleanUrl = url.split('#')[0]; // 去除 #video
-            const idMatch = cleanUrl.match(/[-\w]{25,}/);
-            return idMatch ? idMatch[0] : null;
+            // 處理 #video
+            let cleanUrl = url.split('#')[0]; 
+            
+            // 情況 1: /d/xxxxx
+            let match = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
+            if (match) return match[1];
+            
+            // 情況 2: id=xxxxx
+            match = cleanUrl.match(/id=([a-zA-Z0-9_-]{25,})/);
+            if (match) return match[1];
+
+            return null;
         }
 
         // 圖片轉換
@@ -237,9 +247,11 @@
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
-        // 🟢 影片 ID 提取
-        function getDriveVideoId(url) {
-            return getDriveId(url);
+        // 🟢 影片轉換 (iframe 模式)
+        function convertDriveVideoLink(url) {
+            const id = getDriveId(url);
+            if (id) return `https://drive.google.com/file/d/${id}/preview`;
+            return url;
         }
 
         function init() {
@@ -293,12 +305,22 @@
                 const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
                 const mainImg = convertDriveLink(firstImg);
                 
-                const status = getValue(item, ['Status', 'status', '狀態']).toLowerCase();
-                const isBusy = ["busy", "忙", "no", "x", "false"].some(k => status.includes(k));
+                // 🟢 狀態判斷 (優先判斷「可」)
+                const status = getValue(item, ['Status', 'status', '狀態', '目前狀態']).toLowerCase();
+                let isBusy = false;
+                
+                // 1. 如果包含 "可"、"ok"、"yes" -> 綠燈
+                if (status.includes('可') || status.includes('ok') || status.includes('yes') || status.includes('free') || status === "") {
+                    isBusy = false;
+                } 
+                // 2. 否則如果包含 "忙"、"no" 等 -> 紅燈
+                else if (["忙", "busy", "no", "x", "false", "售", "約", "休", "有事"].some(k => status.includes(k))) {
+                    isBusy = true;
+                }
                 
                 let statusHtml = isBusy 
-                    ? '<span class="absolute top-3 left-3 bg-red-600/90 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10 backdrop-blur-sm"><i class="fa-solid fa-ban mr-1"></i> 忙碌中</span>'
-                    : '<span class="absolute top-3 left-3 bg-green-500/90 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10 backdrop-blur-sm"><i class="fa-solid fa-check mr-1"></i> 可預約</span>';
+                    ? '<span class="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10">忙碌中</span>'
+                    : '<span class="absolute top-3 left-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded shadow-md z-10">可預約</span>';
 
                 const lineMsg = encodeURIComponent(`你好，我想預定「${name}」，方案 $${price}/40分鐘`);
                 const lineUrl = `https://line.me/ti/p/~${myLineId}?text=${lineMsg}`;
@@ -353,8 +375,7 @@
         // 🟢 點擊載入影片 (解決速度慢 & LINE 相容性)
         function loadIframe(element, videoId) {
             const container = element.parentElement.querySelector('.video-content');
-            // 使用 Preview 模式，這是最快且相容性最高的
-            // ?autoplay=1 嘗試自動播放
+            // 使用 Preview 模式
             const iframeHtml = `<iframe src="https://drive.google.com/file/d/${videoId}/preview?autoplay=1" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
             container.innerHTML = iframeHtml;
             
@@ -401,7 +422,7 @@
                     const isVideo = url.toLowerCase().includes('#video') || url.toLowerCase().endsWith('.mp4');
                     
                     if (isVideo) {
-                        const videoId = getDriveVideoId(url);
+                        const videoId = getDriveId(url);
                         const thumbUrl = convertDriveLink(url);
                         
                         // 🟢 假封面播放器結構
