@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- 🟢 關鍵修復：讓手機 (iPhone/Android) 能順利讀取 Google Drive 圖片 -->
+    <!-- 🟢 關鍵修復：強制關閉 Referrer，解決手機無法讀取 Google Drive 圖片問題 -->
     <meta name="referrer" content="no-referrer">
     
     <!-- ✨ SEO 關鍵優化 ✨ -->
@@ -36,7 +36,6 @@
         .line-btn { background-color: #06C755; }
         .line-btn:hover { background-color: #05b34c; }
         
-        /* 彈窗樣式優化 */
         #gallery-modal { 
             backdrop-filter: blur(20px); 
             background-color: rgba(0, 0, 0, 0.95);
@@ -46,7 +45,7 @@
         .snap-x { scroll-snap-type: x mandatory; }
         .snap-center { scroll-snap-align: center; }
         
-        /* 🟢 圖片自動放大樣式 */
+        /* 圖片樣式 */
         .gallery-img {
             width: 100%; 
             height: 100%; 
@@ -54,34 +53,29 @@
             max-height: 80vh; 
         }
 
-        /* 🟢 影片容器設定 */
+        /* 影片容器：最穩定的 iframe 模式 */
         .video-wrapper {
             position: relative;
             width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* 隱藏影片原生控制項，改用點擊播放 */
-        video {
-            max-height: 80vh;
-            max-width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; 
+            background: #000;
             border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            object-fit: contain;
-            background-color: #000;
-            cursor: pointer;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         
-        /* 影片讀取時的 Loading 圈圈 */
-        .video-loading {
+        @media (max-width: 768px) {
+            .video-wrapper { padding-bottom: 120%; } /* 手機版直式優化 */
+        }
+
+        .video-wrapper iframe {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: -1; /* 在影片下面 */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
         }
     </style>
 </head>
@@ -95,7 +89,7 @@
                 <span class="text-2xl font-black tracking-wider text-white">炮炮王</span>
             </div>
             <a href="#" id="navLineBtn" target="_blank" class="line-btn text-white px-4 py-2 rounded-full text-sm font-bold flex items-center shadow-lg transform active:scale-95 transition">
-                <i class="fa-brands fa-line text-xl mr-2"></i> 客服
+                <i class="fa-brands fa-line text-xl mr-2"></i> 官方客服
             </a>
         </div>
     </nav>
@@ -114,20 +108,24 @@
 
     <!-- 列表內容區 -->
     <section class="max-w-6xl mx-auto px-4 py-8 flex-grow">
+        <!-- 搜尋框 -->
         <div class="flex justify-center mb-8">
             <div class="relative w-full max-w-md">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="搜尋車名、車價、關鍵字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
+                <input type="text" id="searchInput" placeholder="搜尋車名、車籍、關鍵字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500 text-base">
             </div>
         </div>
 
+        <!-- 載入中提示 -->
         <div id="loading" class="text-center py-10">
             <i class="fa-solid fa-circle-notch fa-spin text-3xl text-yellow-500"></i>
             <p class="text-gray-500 mt-2">資料讀取中...</p>
         </div>
 
+        <!-- 卡片容器 -->
         <div id="profiles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
 
+        <!-- 無結果提示 -->
         <div id="no-results" class="hidden text-center py-20">
             <p class="text-gray-500 text-xl">目前沒有符合條件的資料</p>
         </div>
@@ -143,6 +141,7 @@
         <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2 drop-shadow-md bg-black/50 rounded-full w-12 h-12 flex items-center justify-center">
             <i class="fa-solid fa-xmark"></i>
         </button>
+        
         <div class="w-full max-w-5xl h-full flex flex-col justify-center relative">
             <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-white mb-4 text-center pt-4 drop-shadow-md"></h2>
             
@@ -151,7 +150,7 @@
             </div>
             
             <div class="text-center pb-6 pt-2 px-4 w-full max-w-md mx-auto">
-                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑動查看更多 | 點擊影片可暫停/播放</p>
+                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑動查看更多</p>
                 <a href="#" id="modal-line-btn" target="_blank" class="line-btn text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg transform active:scale-95 transition block w-full">
                     立即 LINE 預定
                 </a>
@@ -177,6 +176,7 @@
         
         document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
 
+        // 智慧欄位讀取
         function getValue(item, keys) {
             const allKeys = Object.keys(item);
             for (let targetKey of keys) {
@@ -186,6 +186,7 @@
             return "";
         }
 
+        // Google Drive ID 提取
         function getDriveId(url) {
             if (!url) return null;
             const cleanUrl = url.split('#')[0];
@@ -200,10 +201,10 @@
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
-        // 影片轉換
+        // 影片轉換 (iframe 模式)
         function convertDriveVideoLink(url) {
             const id = getDriveId(url);
-            if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
+            if (id) return `https://drive.google.com/file/d/${id}/preview`;
             return url;
         }
 
@@ -249,9 +250,11 @@
 
             data.forEach((item, index) => {
                 const name = getValue(item, ['車名', 'Name', 'name', '名字']);
-                const age = getValue(item, ['車齡', 'Age', 'age', '年齡']) || "--";
-                const body = getValue(item, ['車身', 'Body', 'body', '身材']) || "--";
+                const age = getValue(item, ['車齡', 'Age', 'age', '年齡', '歲數']) || "--";
+                const body = getValue(item, ['車身', 'Body', 'body', '身材', '三圍']) || "--";
+                const origin = getValue(item, ['車籍', 'Origin', '國籍', '產地', '地點']) || "台東"; // 新增車籍
                 const price = getValue(item, ['車價', 'Price', 'price', '價格']) || "0";
+                const extra = getValue(item, ['加節', 'Extra', '加價']) || "500";
                 
                 const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
                 const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
@@ -284,20 +287,31 @@
                             </div>
                         </div>
                         <div class="p-5 bg-[#2d2d2d]">
+                            <!-- 資訊欄位 (位置已交換) -->
                             <div class="grid grid-cols-2 gap-3 mb-5 text-sm">
                                 <div class="bg-gray-800/50 p-2 rounded flex items-center justify-center border border-gray-700">
                                     <i class="fa-solid fa-cake-candles text-yellow-500 mr-2"></i> 
                                     <span class="text-gray-200">車齡: ${age}</span>
                                 </div>
                                 <div class="bg-gray-800/50 p-2 rounded flex items-center justify-center border border-gray-700">
+                                    <i class="fa-solid fa-location-dot text-yellow-500 mr-2"></i> 
+                                    <span class="text-gray-200">車籍: ${origin}</span>
+                                </div>
+                                <!-- 車身欄位改為跨兩欄顯示 -->
+                                <div class="bg-gray-800/50 p-2 rounded flex items-center justify-center border border-gray-700 col-span-2">
                                     <i class="fa-solid fa-ruler-vertical text-yellow-500 mr-2"></i> 
                                     <span class="text-gray-200">車身: ${body}</span>
                                 </div>
                             </div>
+                            
                             <div class="bg-gray-900 rounded-lg p-3 mb-5 border border-gray-700 shadow-inner">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-gray-400 text-sm">基本方案</span>
                                     <span class="text-xl font-bold text-yellow-400">$${price} <span class="text-xs text-gray-500 font-normal">/ 40分鐘</span></span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs border-t border-gray-800 pt-1 mt-1">
+                                    <span class="text-gray-500">加節費用</span>
+                                    <span class="text-gray-400">+$${extra}</span>
                                 </div>
                             </div>
                             <a href="${lineUrl}" target="_blank" onclick="event.stopPropagation()" class="line-btn w-full text-white font-black text-lg py-3 rounded-lg flex justify-center items-center shadow-lg hover:shadow-green-500/50 transition">
@@ -343,18 +357,10 @@
                     
                     if (isVideo) {
                         const videoUrl = convertDriveVideoLink(url);
-                        // 🟢 影片: 加上封面圖 (poster) 解決 LINE 讀不到問題
-                        // 🟢 移除 controls 屬性，解決醜按鈕問題
-                        // 🟢 加上 onclick 事件，點擊畫面可暫停/播放
                         return `
-                             <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-2" style="min-width: 100%;">
+                             <div class="snap-center shrink-0 w-full md:w-auto h-full flex items-center justify-center p-2" style="min-width: 100%;">
                                 <div class="video-wrapper shadow-2xl border border-gray-700">
-                                    <div class="video-loading text-white"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>
-                                    <video src="${videoUrl}" 
-                                           autoplay muted loop playsinline webkit-playsinline
-                                           poster="${convertDriveLink(url)}" 
-                                           onclick="this.paused ? this.play() : this.pause()">
-                                    </video>
+                                    <iframe src="${videoUrl}" allow="autoplay" allowfullscreen></iframe>
                                 </div>
                             </div>
                         `;
@@ -394,9 +400,10 @@
                 const name = getValue(item, ['車名', 'Name', 'name', '名字']).toLowerCase();
                 const tags = getValue(item, ['Tags', 'tags', '標籤', '關鍵字']).toLowerCase();
                 const body = getValue(item, ['車身', 'Body', 'body', '身材']).toLowerCase();
+                const origin = getValue(item, ['車籍', 'Origin', '國籍']).toLowerCase();
                 const price = getValue(item, ['車價', 'Price', 'price', '價格']).toLowerCase();
 
-                return name.includes(term) || tags.includes(term) || body.includes(term) || price.includes(term);
+                return name.includes(term) || tags.includes(term) || body.includes(term) || origin.includes(term) || price.includes(term);
             });
             currentDisplayedData = filtered;
             renderProfiles(filtered);
