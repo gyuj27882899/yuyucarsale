@@ -36,6 +36,7 @@
         .line-btn { background-color: #06C755; }
         .line-btn:hover { background-color: #05b34c; }
         
+        /* 彈窗樣式優化 */
         #gallery-modal { 
             backdrop-filter: blur(20px); 
             background-color: rgba(0, 0, 0, 0.95);
@@ -53,29 +54,49 @@
             max-height: 80vh; 
         }
 
-        /* 影片容器：最穩定的 iframe 模式 */
+        /* 🟢 影片容器設定 (恢復為串流模式) */
         .video-wrapper {
             position: relative;
             width: 100%;
-            height: 0;
-            padding-bottom: 56.25%; 
-            background: #000;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #000;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         
-        @media (max-width: 768px) {
-            .video-wrapper { padding-bottom: 120%; } /* 手機版直式優化 */
+        /* 隱藏影片原生控制項 */
+        video {
+            max-height: 80vh;
+            max-width: 100%;
+            object-fit: contain;
+            cursor: pointer;
+        }
+        
+        /* 自訂播放按鈕 (置中大圖示) */
+        .play-icon-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        
+        .play-icon-overlay i {
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
         }
 
-        .video-wrapper iframe {
+        /* Loading */
+        .video-loading {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0; 
         }
     </style>
 </head>
@@ -138,8 +159,9 @@
 
     <!-- 相簿彈窗 -->
     <div id="gallery-modal" class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center">
-        <button onclick="closeGallery()" class="absolute top-4 right-4 text-white/80 hover:text-white text-4xl z-[60] focus:outline-none p-2 drop-shadow-md bg-black/50 rounded-full w-12 h-12 flex items-center justify-center">
-            <i class="fa-solid fa-xmark"></i>
+        <!-- 🟢 返回按鈕 (移至左上角，改為返回樣式) -->
+        <button onclick="closeGallery()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-lg z-[60] focus:outline-none px-4 py-2 drop-shadow-md bg-black/60 rounded-full flex items-center transition">
+            <i class="fa-solid fa-arrow-left mr-2"></i> 返回
         </button>
         
         <div class="w-full max-w-5xl h-full flex flex-col justify-center relative">
@@ -150,7 +172,7 @@
             </div>
             
             <div class="text-center pb-6 pt-2 px-4 w-full max-w-md mx-auto">
-                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑動查看更多</p>
+                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑動查看更多 | 點擊畫面播放</p>
                 <a href="#" id="modal-line-btn" target="_blank" class="line-btn text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg transform active:scale-95 transition block w-full">
                     立即 LINE 預定
                 </a>
@@ -176,7 +198,6 @@
         
         document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
 
-        // 智慧欄位讀取
         function getValue(item, keys) {
             const allKeys = Object.keys(item);
             for (let targetKey of keys) {
@@ -186,7 +207,6 @@
             return "";
         }
 
-        // Google Drive ID 提取
         function getDriveId(url) {
             if (!url) return null;
             const cleanUrl = url.split('#')[0];
@@ -194,17 +214,18 @@
             return idMatch ? idMatch[0] : null;
         }
 
-        // 圖片轉換
+        // 圖片轉換 (Thumbnail API)
         function convertDriveLink(url) {
             const id = getDriveId(url);
             if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w2000`; 
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
-        // 影片轉換 (iframe 模式)
+        // 🟢 影片轉換 (串流模式，解決 LINE 播放問題)
         function convertDriveVideoLink(url) {
             const id = getDriveId(url);
-            if (id) return `https://drive.google.com/file/d/${id}/preview`;
+            // 改回 export=download，這是 LINE 支援度最好的方式
+            if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
             return url;
         }
 
@@ -250,11 +271,10 @@
 
             data.forEach((item, index) => {
                 const name = getValue(item, ['車名', 'Name', 'name', '名字']);
-                const age = getValue(item, ['車齡', 'Age', 'age', '年齡', '歲數']) || "--";
-                const body = getValue(item, ['車身', 'Body', 'body', '身材', '三圍']) || "--";
-                const origin = getValue(item, ['車籍', 'Origin', '國籍', '產地', '地點']) || "台東"; // 新增車籍
+                const age = getValue(item, ['車齡', 'Age', 'age', '年齡']) || "--";
+                const body = getValue(item, ['車身', 'Body', 'body', '身材']) || "--";
+                const origin = getValue(item, ['車籍', 'Origin', '國籍', '產地', '地點']) || "台東"; 
                 const price = getValue(item, ['車價', 'Price', 'price', '價格']) || "0";
-                const extra = getValue(item, ['加節', 'Extra', '加價']) || "500";
                 
                 const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
                 const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
@@ -287,7 +307,6 @@
                             </div>
                         </div>
                         <div class="p-5 bg-[#2d2d2d]">
-                            <!-- 資訊欄位 (位置已交換) -->
                             <div class="grid grid-cols-2 gap-3 mb-5 text-sm">
                                 <div class="bg-gray-800/50 p-2 rounded flex items-center justify-center border border-gray-700">
                                     <i class="fa-solid fa-cake-candles text-yellow-500 mr-2"></i> 
@@ -297,21 +316,15 @@
                                     <i class="fa-solid fa-location-dot text-yellow-500 mr-2"></i> 
                                     <span class="text-gray-200">車籍: ${origin}</span>
                                 </div>
-                                <!-- 車身欄位改為跨兩欄顯示 -->
                                 <div class="bg-gray-800/50 p-2 rounded flex items-center justify-center border border-gray-700 col-span-2">
                                     <i class="fa-solid fa-ruler-vertical text-yellow-500 mr-2"></i> 
                                     <span class="text-gray-200">車身: ${body}</span>
                                 </div>
                             </div>
-                            
                             <div class="bg-gray-900 rounded-lg p-3 mb-5 border border-gray-700 shadow-inner">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-gray-400 text-sm">基本方案</span>
                                     <span class="text-xl font-bold text-yellow-400">$${price} <span class="text-xs text-gray-500 font-normal">/ 40分鐘</span></span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs border-t border-gray-800 pt-1 mt-1">
-                                    <span class="text-gray-500">加節費用</span>
-                                    <span class="text-gray-400">+$${extra}</span>
                                 </div>
                             </div>
                             <a href="${lineUrl}" target="_blank" onclick="event.stopPropagation()" class="line-btn w-full text-white font-black text-lg py-3 rounded-lg flex justify-center items-center shadow-lg hover:shadow-green-500/50 transition">
@@ -322,6 +335,20 @@
                 `;
                 container.innerHTML += cardHtml;
             });
+        }
+
+        // 🟢 播放控制
+        function toggleVideo(wrapper) {
+            const video = wrapper.querySelector('video');
+            const icon = wrapper.querySelector('.play-icon-overlay');
+            
+            if (video.paused) {
+                video.play();
+                icon.classList.add('opacity-0');
+            } else {
+                video.pause();
+                icon.classList.remove('opacity-0');
+            }
         }
 
         function openGallery(index) {
@@ -343,6 +370,14 @@
                 mediaItems = mediaItems.concat(urls);
             }
             
+            // 🟢 新增：檢查是否有「影片」專屬欄位
+            const rawVideo = getValue(item, ['Video', '影片', '視頻', '錄影']);
+            if(rawVideo) {
+                const vUrls = rawVideo.split(/[,，\s]+/).filter(u => u.length > 5);
+                // 把影片加到最後面 (或者你想放前面也可以)
+                mediaItems = mediaItems.concat(vUrls.map(u => u + "#video")); // 自動補上 #video 標記以便識別
+            }
+
             const rawGallery = getValue(item, ['Gallery', '相冊', '相簿', '更多']);
             if(rawGallery) {
                 const urls = rawGallery.split(/[,，\s]+/).filter(u => u.length > 5);
@@ -359,8 +394,16 @@
                         const videoUrl = convertDriveVideoLink(url);
                         return `
                              <div class="snap-center shrink-0 w-full md:w-auto h-full flex items-center justify-center p-2" style="min-width: 100%;">
-                                <div class="video-wrapper shadow-2xl border border-gray-700">
-                                    <iframe src="${videoUrl}" allow="autoplay" allowfullscreen></iframe>
+                                <div class="video-wrapper shadow-2xl border border-gray-700" onclick="toggleVideo(this)">
+                                    <div class="video-loading text-white"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>
+                                    <div class="play-icon-overlay">
+                                        <i class="fa-solid fa-play text-white text-6xl opacity-80 shadow-lg"></i>
+                                    </div>
+                                    <video src="${videoUrl}" 
+                                           playsinline webkit-playsinline
+                                           poster="${convertDriveLink(url)}" 
+                                           class="w-full h-full object-contain">
+                                    </video>
                                 </div>
                             </div>
                         `;
