@@ -3,82 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- 🟢 關鍵設定：強制關閉 Referrer，確保 Google Drive 圖片在手機可讀取 -->
+    <!-- 🟢 關鍵：解決 Google Drive 圖片防盜鏈問題 -->
     <meta name="referrer" content="no-referrer">
     
     <title>炮炮王 | 台東外約首選</title>
-    <meta name="description" content="台東最優質的外約與專屬陪伴服務。照片真實，價格透明。">
-
-    <!-- 外部資源 -->
+    
+    <!-- 載入 Tailwind CSS (樣式) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Font Awesome (圖示) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 載入 PapaParse (讀取 Excel/CSV 用) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <style>
-        /* 基礎樣式 */
-        body { background-color: #121212; color: white; font-family: sans-serif; margin: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: sans-serif; background-color: #121212; color: #ffffff; }
         
-        /* 卡片設計 */
-        .card { 
-            background: #1e1e1e; 
-            margin-bottom: 0; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            border: 1px solid #333;
-            transition: transform 0.2s;
+        /* 系統狀態列 (除錯用) */
+        #system-status { 
+            font-size: 14px; padding: 10px; text-align: center; width: 100%; 
+            position: fixed; top: 0; left: 0; z-index: 9999; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
-        .card:active { transform: scale(0.98); }
+        .status-init { background-color: #f59e0b; color: black; } /* 黃色：初始化中 */
+        .status-ok { background-color: #06C755; color: white; }   /* 綠色：成功 */
+        .status-err { background-color: #ef4444; color: white; }  /* 紅色：錯誤 */
         
-        /* 圖片容器：固定比例避免跑版 */
-        .img-box {
+        /* 避免頂部被狀態列遮住 */
+        nav { margin-top: 40px; } 
+
+        /* 卡片設計 - 簡單穩定 */
+        .profile-card { 
+            background-color: #1e1e1e; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            border: 1px solid #333; 
+        }
+        
+        /* 圖片容器 - 強制固定高度，避免跑版 */
+        .img-container {
             width: 100%;
-            height: 0;
-            padding-bottom: 125%; /* 4:5 比例，適合人像 */
+            height: 300px; /* 強制高度，確保整齊 */
             position: relative;
             background-color: #000;
+            overflow: hidden;
         }
-        .img-box img { 
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; 
-            object-fit: cover; 
-        }
-
-        /* 按鈕樣式 */
-        .btn-main {
-            background: linear-gradient(to right, #06C755, #05b34c);
-            color: white;
-            font-weight: bold;
-            padding: 12px;
-            border-radius: 50px;
-            text-align: center;
-            display: block;
-            width: 100%;
-            box-shadow: 0 4px 10px rgba(6, 199, 85, 0.3);
+        .img-container img {
+            width: 100%; 
+            height: 100%;
+            object-fit: cover; /* 填滿容器 */
         }
 
-        /* 彈窗樣式 */
-        #popup {
-            position: fixed; inset: 0; z-index: 50;
-            background-color: rgba(0, 0, 0, 0.95);
+        /* 彈窗設計 */
+        #gallery-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.95);
+            z-index: 100;
             display: none; /* 預設隱藏 */
             flex-direction: column;
-            align-items: center; justify-content: center;
+            align-items: center;
+            justify-content: center;
         }
         
-        /* 彈窗內容區 */
-        .popup-scroll {
+        .modal-content {
             width: 100%;
-            height: 75vh;
+            height: 60vh;
             display: flex;
             align-items: center;
-            overflow-x: auto; 
+            overflow-x: auto; /* 左右滑動 */
             scroll-snap-type: x mandatory;
             gap: 10px;
             padding: 0 10px;
         }
         
-        .popup-item {
+        .modal-item {
             min-width: 100%;
             height: 100%;
             display: flex;
@@ -88,281 +85,335 @@
             position: relative;
         }
         
-        .popup-item img {
+        .modal-item img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            border-radius: 8px;
+        }
+
+        /* 影片 iframe RWD */
+        .video-container {
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 16/9;
+            background: black;
+        }
+        .video-container iframe {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 按鈕優化 */
+        .btn-line {
+            background-color: #06C755; 
+            color: white; 
+            font-weight: bold; 
+            padding: 12px; 
+            border-radius: 50px; 
+            text-align: center; 
+            display: block; 
+            width: 100%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
 
-    <!-- 導航 -->
-    <nav class="bg-gray-900 p-4 sticky top-0 z-40 flex justify-between items-center shadow-lg border-b border-gray-800">
+    <!-- 1. 系統狀態列 (確認連線狀況) -->
+    <div id="system-status" class="status-init">
+        <i class="fa-solid fa-spinner fa-spin"></i> 正在連線 Google Sheet 資料庫...
+    </div>
+
+    <!-- 2. 導航欄 -->
+    <nav class="px-4 py-3 bg-gray-900 border-b border-gray-800 flex justify-between items-center sticky top-0 z-40">
         <div class="flex items-center gap-2">
             <i class="fa-solid fa-crown text-yellow-500 text-xl"></i>
-            <span class="text-xl font-bold tracking-wider">炮炮王</span>
+            <span class="text-xl font-bold">炮炮王</span>
         </div>
-        <a href="#" id="navLineBtn" target="_blank" class="bg-white text-green-700 px-4 py-1.5 rounded-full text-sm font-bold shadow-md">
-            <i class="fa-brands fa-line mr-1"></i> 客服
+        <a href="#" id="nav-line-btn" class="bg-white text-green-600 px-4 py-1.5 rounded-full text-sm font-bold">
+            客服
         </a>
     </nav>
 
-    <!-- 內容區 -->
-    <div class="max-w-4xl mx-auto p-4 pb-20">
+    <!-- 3. 主要內容區 -->
+    <main class="max-w-4xl mx-auto px-4 py-6 pb-20">
         
         <!-- 搜尋 -->
         <div class="mb-6">
-            <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="搜尋車名、關鍵字..." 
-                       class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-full text-white focus:outline-none focus:border-yellow-500">
-            </div>
+            <input type="text" id="search-input" placeholder="🔍 搜尋車名、關鍵字..." 
+                   class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-yellow-500">
         </div>
 
-        <!-- 載入狀態 -->
-        <div id="status-msg" class="text-center py-20 text-gray-400">
-            <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-yellow-500"></i><br>
-            資料庫連線中...
+        <!-- 卡片列表容器 -->
+        <div id="card-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 內容會由 JavaScript 自動產生 -->
         </div>
 
-        <!-- 列表 -->
-        <div id="list-area" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden"></div>
-        <div id="no-result" class="hidden text-center py-20 text-gray-500">查無相關資料</div>
-    </div>
+        <!-- 無資料提示 -->
+        <div id="no-data" class="hidden text-center py-20 text-gray-500">
+            <p>暫無資料，或讀取失敗。</p>
+        </div>
 
-    <!-- 頁腳 -->
-    <footer class="text-center py-6 text-gray-600 text-xs border-t border-gray-800">
+    </main>
+
+    <!-- 4. 頁尾 -->
+    <footer class="text-center py-6 text-gray-600 text-xs">
         &copy; 2025 炮炮王. All Rights Reserved.
     </footer>
 
-    <!-- 彈窗 (全螢幕) -->
-    <div id="popup">
-        <button onclick="closePopup()" class="absolute top-6 left-6 text-white text-lg bg-gray-800/80 px-4 py-2 rounded-full z-50 backdrop-blur-sm border border-gray-600">
-            <i class="fa-solid fa-arrow-left mr-2"></i> 返回
+    <!-- 5. 彈窗 (相簿/影片) -->
+    <div id="gallery-modal">
+        <!-- 關閉按鈕 -->
+        <button onclick="closeModal()" class="absolute top-6 left-6 text-white text-lg bg-gray-800 px-4 py-2 rounded-full z-50 border border-gray-600">
+            <i class="fa-solid fa-arrow-left"></i> 返回
         </button>
-        
-        <h2 id="popup-title" class="absolute top-6 w-full text-center font-bold text-xl pointer-events-none mt-2 drop-shadow-md"></h2>
 
-        <div id="popup-content" class="popup-scroll">
-            <!-- 圖片會塞在這裡 -->
-        </div>
+        <!-- 標題 -->
+        <h2 id="modal-title" class="absolute top-6 w-full text-center text-xl font-bold pointer-events-none mt-2 text-white drop-shadow-md"></h2>
 
+        <!-- 滑動內容區 -->
+        <div id="modal-scroll-area" class="modal-content"></div>
+
+        <!-- 底部按鈕 -->
         <div class="absolute bottom-10 w-full px-6 max-w-md">
-            <p class="text-center text-xs text-gray-400 mb-3 animate-pulse">左右滑動查看更多 | 點擊播放影片</p>
-            <a href="#" id="popup-line-btn" class="btn-main">
+            <p class="text-center text-xs text-gray-400 mb-3">左右滑動查看更多</p>
+            <a href="#" id="modal-action-btn" class="btn-line">
                 立即 LINE 預約
             </a>
         </div>
     </div>
 
+    <!-- 6. 核心程式碼 -->
     <script>
-        // 👇 設定區 👇
-        const myLineId = "你的LINE_ID"; 
-        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=1682452717&single=true&output=csv";
-        // -----------------------
+        // 設定區
+        const LINE_ID = "你的LINE_ID"; 
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=1682452717&single=true&output=csv";
 
-        const statusMsg = document.getElementById('status-msg');
-        const listArea = document.getElementById('list-area');
-        const noResult = document.getElementById('no-result');
-        const popup = document.getElementById('popup');
+        // DOM 元素
+        const statusEl = document.getElementById('system-status');
+        const container = document.getElementById('card-container');
+        const modal = document.getElementById('gallery-modal');
+        const modalScroll = document.getElementById('modal-scroll-area');
+        
         let allData = [];
-        let currentData = [];
 
-        document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
-
-        // 1. 啟動
-        init();
-
+        // 初始化
         function init() {
-            // 強制加上時間戳記，避免手機快取舊的壞資料
-            const url = csvUrl + "&t=" + new Date().getTime();
+            document.getElementById('nav-line-btn').href = `https://line.me/ti/p/~${LINE_ID}`;
             
+            // 強制加上時間戳記，避免快取舊資料
+            const url = CSV_URL + "&t=" + Date.now();
+
             Papa.parse(url, {
                 download: true,
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    if (!results.data || results.data.length === 0) {
-                        statusMsg.innerHTML = "⚠️ 連線成功，但 Excel 是空的";
-                        return;
-                    }
-
-                    // 過濾資料 (只要有名字就算有效)
-                    allData = results.data.filter(item => {
-                        return getValue(item, ['車名', '名字', '姓名', 'Name']);
-                    });
-
-                    if (allData.length > 0) {
-                        statusMsg.classList.add('hidden');
-                        listArea.classList.remove('hidden');
-                        currentData = allData;
-                        render(allData);
+                    if (results.data && results.data.length > 0) {
+                        allData = results.data;
+                        statusEl.innerHTML = `✅ 連線成功！讀取到 ${allData.length} 筆資料`;
+                        statusEl.className = "status-ok";
+                        
+                        // 3秒後自動隱藏綠色狀態列，避免擋住視線
+                        setTimeout(() => { 
+                            statusEl.style.display = 'none'; 
+                            document.querySelector('nav').style.marginTop = '0'; 
+                        }, 3000); 
+                        
+                        renderCards(allData);
                     } else {
-                        statusMsg.innerHTML = "⚠️ 找不到「車名」欄位，請檢查 Excel 標題。";
+                        statusEl.innerHTML = "⚠️ 連線成功但沒有資料 (Excel是空的?)";
+                        statusEl.className = "status-err";
                     }
                 },
                 error: function(err) {
-                    statusMsg.innerHTML = "❌ 連線失敗，請檢查網路。";
+                    statusEl.innerHTML = `❌ 連線失敗: ${err.message}`;
+                    statusEl.className = "status-err";
                 }
             });
         }
 
-        // 輔助：讀取欄位 (自動忽略大小寫、空格)
-        function getValue(item, keys) {
-            // 正規化 item keys
-            const normalizedItem = {};
-            Object.keys(item).forEach(k => normalizedItem[k.trim().toLowerCase()] = item[k]);
-            
-            for (let target of keys) {
-                const val = normalizedItem[target.toLowerCase()];
-                if (val) return val.trim();
+        // 讀取欄位輔助函式 (自動忽略大小寫)
+        function getField(item, keys) {
+            const rowKeys = Object.keys(item);
+            for (let k of keys) {
+                // 模糊比對
+                const found = rowKeys.find(rk => rk.toLowerCase().includes(k.toLowerCase()));
+                if (found && item[found]) return item[found].trim();
             }
             return "";
         }
 
-        // 輔助：轉換圖片連結 (強制用縮圖 API)
-        function getImgUrl(url) {
-            if (!url) return "https://via.placeholder.com/600x800?text=No+Image";
-            // 移除可能存在的 #video 標記
-            const cleanUrl = url.split('#')[0];
-            const match = cleanUrl.match(/[-\w]{25,}/);
-            const id = match ? match[0] : null;
-            if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
-            return url;
+        // 轉換 Google Drive 連結 ID
+        function getDriveId(url) {
+            if (!url) return null;
+            const cleanUrl = url.split('#')[0].split('?')[0]; 
+            let match = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
+            if (match) return match[1];
+            match = cleanUrl.match(/id=([a-zA-Z0-9_-]{25,})/);
+            if (match) return match[1];
+            return null;
         }
 
-        // 2. 渲染畫面
-        function render(data) {
-            listArea.innerHTML = "";
+        // 圖片轉換 (Thumbnail API)
+        function convertImg(url) {
+            const id = getDriveId(url);
+            if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+            return url || "https://via.placeholder.com/600x800?text=No+Image";
+        }
+
+        // 渲染卡片
+        function renderCards(data) {
+            container.innerHTML = "";
             
-            if (data.length === 0) {
-                noResult.classList.remove('hidden');
+            // 過濾掉沒有名字的無效資料
+            const validData = data.filter(item => getField(item, ['車名', '名字', 'Name']) !== "");
+
+            if (validData.length === 0) {
+                document.getElementById('no-data').classList.remove('hidden');
                 return;
             } else {
-                noResult.classList.add('hidden');
+                document.getElementById('no-data').classList.add('hidden');
             }
 
-            data.forEach((item, idx) => {
-                const name = getValue(item, ['車名', '名字']);
-                const price = getValue(item, ['車價', '價格']);
-                const age = getValue(item, ['車齡', '年齡']) || "--";
-                const body = getValue(item, ['車身', '身材']) || "--";
-                const origin = getValue(item, ['車籍', '地點']) || "台東";
+            validData.forEach((item, index) => {
+                const name = getField(item, ['車名', '名字', '姓名']);
+                const price = getField(item, ['車價', '價格']);
+                const age = getField(item, ['車齡', '年齡']) || "--";
+                const origin = getField(item, ['車籍', '地點']) || "台東";
+                const body = getField(item, ['車身', '身材']) || "--";
                 
-                // 圖片處理 (取第一張當封面)
-                const rawImg = getValue(item, ['照片', '圖片', 'Image', 'MainImage']);
-                const firstImg = rawImg.split(',')[0];
-                const imgUrl = getImgUrl(firstImg);
+                // 圖片處理
+                const rawImg = getField(item, ['照片', '圖片', 'Image', 'MainImage']);
+                const firstImg = rawImg.split(',')[0]; // 取第一張
+                const displayImg = convertImg(firstImg);
 
-                // 狀態
-                const status = getValue(item, ['狀態', 'Status', '目前狀態']);
-                const isBusy = ["忙", "busy", "no", "x", "預約"].some(k => status.toLowerCase().includes(k));
-                
-                const badge = isBusy 
-                    ? `<span class="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-full font-bold z-10 shadow-md">忙碌中</span>`
-                    : `<span class="absolute top-3 left-3 bg-green-500 text-white text-xs px-3 py-1 rounded-full font-bold z-10 shadow-md">可預約</span>`;
+                // 狀態處理
+                const status = getField(item, ['狀態', 'Status', '目前狀態', '是否忙碌']).toLowerCase();
+                const isBusy = ["忙", "busy", "no", "x", "有事", "售出"].some(k => status.includes(k));
+                const statusBadge = isBusy 
+                    ? `<span class="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-full font-bold z-10 shadow">忙碌中</span>`
+                    : `<span class="absolute top-3 left-3 bg-green-500 text-white text-xs px-3 py-1 rounded-full font-bold z-10 shadow">可預約</span>`;
 
+                // 建立卡片 HTML
                 const html = `
-                    <div class="card relative group" onclick="openPopup(${idx})">
-                        <div class="img-box">
-                            ${badge}
-                            <img src="${imgUrl}" loading="lazy">
-                            <div class="absolute bottom-0 w-full bg-gradient-to-t from-black to-transparent p-4 pt-12">
-                                <h3 class="text-2xl font-bold text-white drop-shadow-md">${name}</h3>
+                    <div class="profile-card group" onclick="openModal(${index})">
+                        <div class="img-container">
+                            ${statusBadge}
+                            <img src="${displayImg}" loading="lazy" onerror="this.src='https://via.placeholder.com/400?text=讀取失敗'">
+                            <div class="absolute bottom-0 w-full bg-gradient-to-t from-black to-transparent p-4 pt-10">
+                                <h3 class="text-white text-2xl font-bold drop-shadow-md">${name}</h3>
                             </div>
                         </div>
-                        <div class="p-4 bg-[#252525]">
-                            <div class="grid grid-cols-2 gap-2 mb-3 text-sm text-gray-300">
-                                <div class="bg-gray-800 p-1.5 rounded text-center">車齡: ${age}</div>
-                                <div class="bg-gray-800 p-1.5 rounded text-center">車籍: ${origin}</div>
-                                <div class="bg-gray-800 p-1.5 rounded text-center col-span-2">車身: ${body}</div>
+                        <div class="p-4 text-sm text-gray-300 bg-[#2d2d2d]">
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div class="bg-gray-800 p-1 rounded text-center">車齡：${age}</div>
+                                <div class="bg-gray-800 p-1 rounded text-center">車籍：${origin}</div>
+                                <div class="bg-gray-800 p-1 rounded text-center col-span-2">車身：${body}</div>
                             </div>
-                            <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-700">
+                            <div class="flex justify-between items-center border-t border-gray-700 pt-3 mt-2">
                                 <span class="text-yellow-400 font-bold text-lg">$${price}</span>
-                                <span class="text-green-500 text-sm font-bold flex items-center">
-                                    預約 <i class="fa-solid fa-chevron-right ml-1"></i>
-                                </span>
+                                <span class="text-green-500 font-bold text-sm">點擊查看 <i class="fa-solid fa-chevron-right"></i></span>
                             </div>
                         </div>
                     </div>
                 `;
-                listArea.innerHTML += html;
+                container.innerHTML += html;
             });
         }
 
-        // 3. 彈窗邏輯
-        window.openPopup = function(idx) {
-            const item = currentData[idx]; // 使用當前搜尋結果的資料
+        // 開啟彈窗
+        window.openModal = function(idx) {
+            // 使用原始資料陣列 (注意：如果有搜尋，這裡要改用 currentData，先用全域變數示範)
+            // 修正：重新在 filteredData 找資料
+            const item = currentFilteredData[idx]; 
             if (!item) return;
 
-            const name = getValue(item, ['車名', '名字']);
-            document.getElementById('popup-title').innerText = name;
+            const name = getField(item, ['車名', '名字']);
+            const price = getField(item, ['車價', '價格']);
             
-            const content = document.getElementById('popup-content');
-            content.innerHTML = "";
+            document.getElementById('modal-title').innerText = name;
+            const lineUrl = `https://line.me/ti/p/~${LINE_ID}?text=${encodeURIComponent('我想預約 ' + name + ' 方案 ' + price)}`;
+            document.getElementById('modal-action-btn').href = lineUrl;
 
-            // 處理圖片與影片
-            const rawImg = getValue(item, ['照片', '圖片', 'Image']);
+            // 處理媒體
+            modalScroll.innerHTML = "";
+            let mediaList = [];
+
+            // 1. 照片
+            const rawImg = getField(item, ['照片', '圖片', 'Image']);
             if (rawImg) {
-                // 支援用逗號、空白、換行分隔
-                rawImg.split(/[,，\s]+/).forEach(url => {
-                    if (url.trim() == "" || url.length < 5) return;
-                    
+                const urls = rawImg.split(/[,，\s]+/).filter(u => u.length > 5);
+                mediaList = mediaList.concat(urls);
+            }
+
+            // 2. 影片 (支援 #video 和 專屬欄位)
+            const rawVideo = getField(item, ['影片', 'Video']);
+            if (rawVideo) {
+                const vUrls = rawVideo.split(/[,，\s]+/).filter(u => u.length > 5);
+                mediaList = mediaList.concat(vUrls.map(u => u.includes('#video') ? u : u + "#video"));
+            }
+
+            // 檢查原照片連結是否有標記影片
+            mediaList = mediaList.map(url => {
+               if(url.toLowerCase().includes(".mp4")) return url + "#video";
+               return url;
+            });
+
+            // 產生彈窗內容
+            if (mediaList.length === 0) {
+                modalScroll.innerHTML = `<p class="text-white w-full text-center">暫無照片</p>`;
+            } else {
+                mediaList.forEach(url => {
                     const div = document.createElement('div');
-                    div.className = "popup-item";
+                    div.className = "modal-item";
                     
-                    // 偵測影片 (#video 或 .mp4)
-                    if (url.includes("#video") || url.includes(".mp4")) {
-                        // 影片：用假封面 -> 點擊去外部播放 (最穩)
-                        const match = url.match(/[-\w]{25,}/);
-                        const id = match ? match[0] : "";
+                    if (url.toLowerCase().includes("#video")) {
+                        // 影片：用 iframe 預覽 (最穩)
+                        const id = getDriveId(url);
                         if(id) {
-                            const thumb = `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
-                            const videoLink = `https://drive.google.com/file/d/${id}/preview`; 
-                            
                             div.innerHTML = `
-                                <a href="${videoLink}" target="_blank" class="relative w-full h-full flex justify-center items-center">
-                                    <img src="${thumb}" style="opacity:0.6;">
-                                    <i class="fa-solid fa-play-circle text-7xl text-white absolute drop-shadow-lg opacity-90"></i>
-                                    <p class="absolute bottom-20 text-white text-sm bg-black/50 px-3 py-1 rounded-full">點擊播放影片</p>
-                                </a>
-                            `;
+                                <div class="video-container">
+                                    <iframe src="https://drive.google.com/file/d/${id}/preview" allowfullscreen></iframe>
+                                </div>`;
                         }
                     } else {
                         // 圖片
-                        const src = getImgUrl(url);
-                        div.innerHTML = `<img src="${src}">`;
+                        const imgSrc = convertImg(url);
+                        div.innerHTML = `<img src="${imgSrc}" onerror="this.src='https://via.placeholder.com/600?text=Error'">`;
                     }
-                    content.appendChild(div);
+                    modalScroll.appendChild(div);
                 });
             }
 
-            // LINE 按鈕
-            const price = getValue(item, ['車價', '價格']);
-            const msg = encodeURIComponent(`你好，我正在看「${name}」的照片，想預定方案 $${price}/40分鐘`);
-            document.getElementById('popup-line-btn').href = `https://line.me/ti/p/~${myLineId}?text=${msg}`;
-
-            document.getElementById('popup').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+            modal.style.display = "flex";
+            document.body.style.overflow = "hidden"; // 禁止背景滑動
         }
 
-        window.closePopup = function() {
-            document.getElementById('popup').style.display = 'none';
-            document.getElementById('popup-content').innerHTML = "";
-            document.body.style.overflow = 'auto';
+        window.closeModal = function() {
+            modal.style.display = "none";
+            modalScroll.innerHTML = ""; // 清空內容以停止影片
+            document.body.style.overflow = "auto";
         }
 
         // 搜尋功能
-        document.getElementById('searchInput').addEventListener('input', function(e) {
+        let currentFilteredData = [];
+        const searchInput = document.getElementById('search-input');
+        
+        searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase().trim();
-            currentData = allData.filter(item => {
-                // 將所有欄位值串起來搜尋
-                return Object.values(item).join(" ").toLowerCase().includes(term);
+            currentFilteredData = allData.filter(item => {
+                const allText = Object.values(item).join(" ").toLowerCase();
+                return allText.includes(term);
             });
-            render(currentData);
+            renderCards(currentFilteredData);
         });
+
+        // 啟動
+        init();
+        
+        // 確保彈窗點擊也能取得正確資料
+        setTimeout(() => { currentFilteredData = allData; }, 1000);
 
     </script>
 </body>
