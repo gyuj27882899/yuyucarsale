@@ -51,14 +51,14 @@
             width: 100%; 
             height: 100%; 
             object-fit: contain; 
-            max-height: 85vh; /* 讓圖片盡量大 */
+            max-height: 85vh; 
         }
 
         /* 🟢 影片容器 (Iframe) 強制放大 */
         .video-container {
             position: relative;
             width: 100%;
-            height: 80vh; /* 強制高度佔螢幕 80% */
+            height: 80vh; 
             background: #000;
             display: flex;
             align-items: center;
@@ -182,26 +182,26 @@
             return "";
         }
 
-        // Drive ID 提取器
+        // Drive ID 提取器 (支援 Google Form 回應的 open?id= 格式)
         function getDriveId(url) {
             if (!url) return null;
-            const cleanUrl = url.split('#')[0];
-            const idMatch = cleanUrl.match(/[-\w]{25,}/);
-            return idMatch ? idMatch[0] : null;
+            const cleanUrl = url.split('#')[0]; // 移除可能的手動標記
+            
+            // 支援 /d/ID, id=ID, open?id=ID
+            const idMatch = cleanUrl.match(/\/d\/(.*?)\/|id=(.*?)(&|$)/);
+            return idMatch ? (idMatch[1] || idMatch[2]) : null;
         }
 
         // 🟢 圖片：使用 Thumbnail API
         function convertDriveLink(url) {
             const id = getDriveId(url);
-            // sz=w2000 確保縮圖夠大
             if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w2000`; 
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
-        // 🟢 影片：改用「Google 預覽播放器 (Preview)」以支援所有格式
+        // 🟢 影片：改用「預覽播放器 (Preview)」以支援所有格式
         function convertDriveVideoLink(url) {
             const id = getDriveId(url);
-            // 使用 /preview 介面，雖然不能自動播放，但相容性最高（支援 MOV, MKV 等）
             if (id) return `https://drive.google.com/file/d/${id}/preview`;
             return url;
         }
@@ -252,12 +252,12 @@
                 const body = getValue(item, ['車身', 'Body', 'body', '身材']) || "--";
                 const price = getValue(item, ['車價', 'Price', 'price', '價格']) || "0";
                 
-                // Form 上傳圖片
+                // Form 上傳圖片 (封面)
                 const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
                 const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
-                // 封面圖一律轉為靜態圖 (Thumbnail)
                 const mainImg = convertDriveLink(firstImg);
                 
+                // 狀態判斷
                 const status = getValue(item, ['Status', 'status', '狀態']).toLowerCase();
                 const isBusy = ["busy", "忙", "no", "x", "false"].some(k => status.includes(k));
                 
@@ -324,29 +324,32 @@
             
             let mediaItems = [];
             
+            // 1. 抓取圖片欄位 (可能多張)
             const rawMain = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
             if(rawMain) {
                 const urls = rawMain.split(/[,，\s]+/).filter(u => u.length > 5);
-                mediaItems = mediaItems.concat(urls);
+                mediaItems = mediaItems.concat(urls.map(url => ({type: 'image', url: url})));
             }
             
-            const rawGallery = getValue(item, ['Gallery', '相冊', '相簿', '更多']);
-            if(rawGallery) {
-                const urls = rawGallery.split(/[,，\s]+/).filter(u => u.length > 5);
-                mediaItems = mediaItems.concat(urls);
+            // 2. 抓取影片欄位 (新增邏輯)
+            // 自動尋找標題包含「影片」或「Video」的欄位
+            const rawVideo = getValue(item, ['Video', 'video', '影片', '視頻']);
+            if(rawVideo) {
+                // 影片欄位也可能有多個連結，用逗號分隔
+                const videoUrls = rawVideo.split(/[,，\s]+/).filter(u => u.length > 5);
+                // 加到媒體列表，並標記為 video 類型
+                mediaItems = mediaItems.concat(videoUrls.map(url => ({type: 'video', url: url})));
             }
 
             if(mediaItems.length === 0) {
                 modalContainer.innerHTML = `<p class="text-white">暫無更多照片</p>`;
             } else {
-                modalContainer.innerHTML = mediaItems.map(url => {
-                    const isVideo = url.toLowerCase().includes('#video') || url.toLowerCase().endsWith('.mp4');
+                modalContainer.innerHTML = mediaItems.map(media => {
+                    // 如果是影片欄位來的，或者連結本身包含 #video，都視為影片
+                    const isVideo = media.type === 'video' || media.url.toLowerCase().includes('#video');
                     
                     if (isVideo) {
-                        const videoUrl = convertDriveVideoLink(url);
-                        // 🟢 使用 Iframe (Google Drive Preview)
-                        // 優點：支援 MOV/MKV/AVI 所有格式
-                        // 缺點：無法自動播放 (但相容性優先)
+                        const videoUrl = convertDriveVideoLink(media.url);
                         return `
                              <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-0" style="min-width: 100%;">
                                 <div class="video-container shadow-2xl border border-gray-700">
@@ -355,8 +358,7 @@
                             </div>
                         `;
                     } else {
-                        const imgUrl = convertDriveLink(url);
-                        // 🟢 圖片樣式：強制使用 w-full h-full 和 object-contain
+                        const imgUrl = convertDriveLink(media.url);
                         return `
                             <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-2" style="min-width: 100%;">
                                 <img src="${imgUrl}" class="gallery-img rounded-lg shadow-2xl bg-black/50" 
