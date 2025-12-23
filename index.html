@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- 🟢 關鍵修復：強制關閉 Referrer，解決手機無法讀取 Google Drive 圖片問題 -->
+    <!-- 🟢 關鍵修復：讓手機 (iPhone/Android) 能順利讀取 Google Drive 圖片 -->
     <meta name="referrer" content="no-referrer">
     
     <!-- ✨ SEO 關鍵優化 ✨ -->
@@ -32,29 +32,44 @@
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #1a1a1a; color: #fff; -webkit-tap-highlight-color: transparent; }
         .profile-card { transition: transform 0.3s ease; background-color: #2d2d2d; }
-        .profile-card:active { transform: scale(0.98); } /* 手機點擊回饋 */
+        .profile-card:active { transform: scale(0.98); }
         .line-btn { background-color: #06C755; }
         .line-btn:hover { background-color: #05b34c; }
         
         /* 彈窗樣式優化 */
         #gallery-modal { 
-            backdrop-filter: blur(15px); 
+            backdrop-filter: blur(20px); 
             background-color: rgba(0, 0, 0, 0.95);
         }
-        /* 隱藏捲軸但保留功能 */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .snap-x { scroll-snap-type: x mandatory; }
         .snap-center { scroll-snap-align: center; }
         
-        /* 影片播放器樣式 */
-        video {
-            max-height: 80vh;
-            max-width: 100%;
+        /* 🟢 圖片自動放大樣式 */
+        .gallery-img {
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            max-height: 85vh; /* 讓圖片盡量大 */
+        }
+
+        /* 🟢 影片容器 (Iframe) 強制放大 */
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 80vh; /* 強制高度佔螢幕 80% */
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            object-fit: contain;
-            background-color: #000;
+            overflow: hidden;
+        }
+        .video-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
@@ -91,7 +106,7 @@
         <div class="flex justify-center mb-8">
             <div class="relative w-full max-w-md">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="搜尋車名、車價、關鍵字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500 text-base">
+                <input type="text" id="searchInput" placeholder="搜尋車名、車價、關鍵字..." class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 transition shadow-inner placeholder-gray-500">
             </div>
         </div>
 
@@ -126,7 +141,7 @@
             <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-white mb-4 text-center pt-4 drop-shadow-md"></h2>
             
             <!-- 圖片影片滑動區 -->
-            <div id="modal-images-container" class="flex overflow-x-auto space-x-4 p-4 hide-scrollbar snap-x h-[75vh] items-center">
+            <div id="modal-images-container" class="flex overflow-x-auto space-x-4 p-4 hide-scrollbar snap-x h-[85vh] items-center w-full">
                 <!-- 內容由 JS 生成 -->
             </div>
             
@@ -145,8 +160,6 @@
         // 👇 設定區 👇
         // ==========================================
         const myLineId = "你的LINE_ID"; 
-        
-        // 🚀 你的 Google Form 試算表連結
         const googleSheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnvM52ixrMGKzLTMMleErStxnyRpFlsPuMUlSc2HdNwIbJhgPrz_eDe7xMgbZv4acLBPK5u9JS6r20/pub?gid=1682452717&single=true&output=csv"; 
         // ==========================================
 
@@ -159,7 +172,7 @@
         
         document.getElementById('navLineBtn').href = `https://line.me/ti/p/~${myLineId}`;
 
-        // 🟢 智慧欄位讀取
+        // 智慧欄位讀取
         function getValue(item, keys) {
             const allKeys = Object.keys(item);
             for (let targetKey of keys) {
@@ -169,28 +182,27 @@
             return "";
         }
 
-        // 🟢 Google Drive ID 提取器
+        // Drive ID 提取器
         function getDriveId(url) {
             if (!url) return null;
-            // 移除 #video 標記和參數
             const cleanUrl = url.split('#')[0];
             const idMatch = cleanUrl.match(/[-\w]{25,}/);
             return idMatch ? idMatch[0] : null;
         }
 
-        // 🟢 圖片轉換：使用 Thumbnail API (手機讀取必備)
+        // 🟢 圖片：使用 Thumbnail API
         function convertDriveLink(url) {
             const id = getDriveId(url);
-            if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`; 
+            // sz=w2000 確保縮圖夠大
+            if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w2000`; 
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
-        // 🟢 影片轉換：使用直連模式 (支援自動播放)
-        // 舊版是 /preview (網頁預覽)，手機無法自動播。
-        // 新版改為 export=download，配合 <video> 標籤實現串流播放。
+        // 🟢 影片：改用「Google 預覽播放器 (Preview)」以支援所有格式
         function convertDriveVideoLink(url) {
             const id = getDriveId(url);
-            if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
+            // 使用 /preview 介面，雖然不能自動播放，但相容性最高（支援 MOV, MKV 等）
+            if (id) return `https://drive.google.com/file/d/${id}/preview`;
             return url;
         }
 
@@ -202,7 +214,7 @@
                     header: true,
                     complete: function(results) {
                         profilesData = results.data.filter(item => {
-                            const name = getValue(item, ['車名', 'Name', 'name', '名字', '姓名']);
+                            const name = getValue(item, ['車名', 'Name', 'name', '名字']);
                             return name !== ""; 
                         });
                         
@@ -219,7 +231,7 @@
                     },
                     error: () => {
                         loadingDiv.classList.add('hidden');
-                        container.innerHTML = `<div class="col-span-full text-center text-red-400">❌ 連線失敗，請檢查網路或 CSV 連結。</div>`;
+                        container.innerHTML = `<div class="col-span-full text-center text-red-400">❌ 連線失敗。</div>`;
                         container.classList.remove('hidden');
                     }
                 });
@@ -240,9 +252,10 @@
                 const body = getValue(item, ['車身', 'Body', 'body', '身材']) || "--";
                 const price = getValue(item, ['車價', 'Price', 'price', '價格']) || "0";
                 
-                // Form 上傳圖片 (第一張)
+                // Form 上傳圖片
                 const rawMainImg = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
                 const firstImg = rawMainImg ? rawMainImg.split(',')[0].trim() : "";
+                // 封面圖一律轉為靜態圖 (Thumbnail)
                 const mainImg = convertDriveLink(firstImg);
                 
                 const status = getValue(item, ['Status', 'status', '狀態']).toLowerCase();
@@ -254,7 +267,7 @@
 
                 const lineMsg = encodeURIComponent(`你好，我想預定「${name}」，方案 $${price}/40分鐘`);
                 const lineUrl = `https://line.me/ti/p/~${myLineId}?text=${lineMsg}`;
-                const seoAltText = `${name} - 台東外約 台東茶`;
+                const seoAltText = `${name} - 台東外約`;
 
                 const cardHtml = `
                     <div class="profile-card rounded-xl overflow-hidden shadow-lg relative group border border-gray-700">
@@ -262,7 +275,7 @@
                         <div class="h-96 overflow-hidden relative cursor-pointer" onclick="openGallery(${index})">
                             <img src="${mainImg}" alt="${seoAltText}" loading="lazy" 
                                  class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100" 
-                                 onerror="this.src='https://via.placeholder.com/600x800?text=圖片載入中...';">
+                                 onerror="this.src='https://via.placeholder.com/600x800?text=圖片讀取中...';">
                             
                             <div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition flex items-center justify-center">
                                 <i class="fa-solid fa-expand text-white/80 opacity-0 group-hover:opacity-100 text-5xl drop-shadow-lg transform scale-50 group-hover:scale-100 transition duration-300"></i>
@@ -311,7 +324,6 @@
             
             let mediaItems = [];
             
-            // 抓取所有圖片/影片欄位
             const rawMain = getValue(item, ['MainImage', 'Image', 'image', '照片', '圖片', '上傳']);
             if(rawMain) {
                 const urls = rawMain.split(/[,，\s]+/).filter(u => u.length > 5);
@@ -328,24 +340,26 @@
                 modalContainer.innerHTML = `<p class="text-white">暫無更多照片</p>`;
             } else {
                 modalContainer.innerHTML = mediaItems.map(url => {
-                    // 🟢 智慧判斷：如果連結包含 #video，視為影片
-                    const isVideo = url.toLowerCase().includes('#video');
+                    const isVideo = url.toLowerCase().includes('#video') || url.toLowerCase().endsWith('.mp4');
                     
                     if (isVideo) {
                         const videoUrl = convertDriveVideoLink(url);
-                        // 影片使用 <video> 標籤，並加上 playsinline (iOS必要) 和 muted (自動播放必要)
+                        // 🟢 使用 Iframe (Google Drive Preview)
+                        // 優點：支援 MOV/MKV/AVI 所有格式
+                        // 缺點：無法自動播放 (但相容性優先)
                         return `
-                             <div class="snap-center shrink-0 w-full md:w-auto h-full flex items-center justify-center p-2" style="min-width: 100%;">
-                                <div class="flex items-center justify-center w-full h-full">
-                                    <video src="${videoUrl}" controls autoplay muted loop playsinline webkit-playsinline></video>
+                             <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-0" style="min-width: 100%;">
+                                <div class="video-container shadow-2xl border border-gray-700">
+                                    <iframe src="${videoUrl}" allow="autoplay; fullscreen" allowfullscreen></iframe>
                                 </div>
                             </div>
                         `;
                     } else {
                         const imgUrl = convertDriveLink(url);
+                        // 🟢 圖片樣式：強制使用 w-full h-full 和 object-contain
                         return `
                             <div class="snap-center shrink-0 w-full h-full flex items-center justify-center p-2" style="min-width: 100%;">
-                                <img src="${imgUrl}" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl bg-black/50" 
+                                <img src="${imgUrl}" class="gallery-img rounded-lg shadow-2xl bg-black/50" 
                                      onerror="this.src='https://via.placeholder.com/600x800?text=Image+Error';">
                             </div>
                         `;
@@ -363,7 +377,6 @@
 
         function closeGallery() {
             modal.classList.add('hidden');
-            // 清空內容以停止影片播放
             document.getElementById('modal-images-container').innerHTML = '';
             document.body.style.overflow = 'auto';
         }
