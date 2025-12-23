@@ -54,49 +54,65 @@
             max-height: 80vh; 
         }
 
-        /* 🟢 影片容器設定 (恢復為串流模式) */
+        /* 🟢 影片容器設定 */
         .video-wrapper {
             position: relative;
             width: 100%;
             height: 100%;
+            min-height: 50vh;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #000;
-            border-radius: 8px;
-            overflow: hidden;
         }
         
-        /* 隱藏影片原生控制項 */
-        video {
-            max-height: 80vh;
-            max-width: 100%;
-            object-fit: contain;
-            cursor: pointer;
-        }
-        
-        /* 自訂播放按鈕 (置中大圖示) */
-        .play-icon-overlay {
+        /* 假封面圖層 (Facade) */
+        .video-facade {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            pointer-events: none;
-            transition: opacity 0.2s;
+            inset: 0;
+            z-index: 20;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
         }
         
-        .play-icon-overlay i {
-            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+        .video-facade img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+        
+        .video-facade:hover img {
+            opacity: 0.6;
         }
 
-        /* Loading */
-        .video-loading {
+        .play-icon {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 0; 
+            z-index: 30;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            transition: transform 0.2s;
+        }
+        
+        .video-facade:active .play-icon {
+            transform: scale(0.9);
+        }
+
+        .video-content {
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
@@ -159,8 +175,8 @@
 
     <!-- 相簿彈窗 -->
     <div id="gallery-modal" class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center">
-        <!-- 🟢 返回按鈕 (移至左上角，改為返回樣式) -->
-        <button onclick="closeGallery()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-lg z-[60] focus:outline-none px-4 py-2 drop-shadow-md bg-black/60 rounded-full flex items-center transition">
+        <!-- 🟢 返回按鈕 (左上角) -->
+        <button onclick="closeGallery()" class="absolute top-4 left-4 text-white hover:text-gray-300 text-lg z-[60] focus:outline-none px-4 py-2 drop-shadow-md bg-black/60 rounded-full flex items-center transition active:scale-95">
             <i class="fa-solid fa-arrow-left mr-2"></i> 返回
         </button>
         
@@ -172,7 +188,7 @@
             </div>
             
             <div class="text-center pb-6 pt-2 px-4 w-full max-w-md mx-auto">
-                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑動查看更多 | 點擊畫面播放</p>
+                <p class="text-gray-400 text-xs mb-3 animate-pulse"><i class="fa-solid fa-arrows-left-right mr-1"></i> 左右滑動查看更多</p>
                 <a href="#" id="modal-line-btn" target="_blank" class="line-btn text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg transform active:scale-95 transition block w-full">
                     立即 LINE 預定
                 </a>
@@ -209,24 +225,21 @@
 
         function getDriveId(url) {
             if (!url) return null;
-            const cleanUrl = url.split('#')[0];
+            const cleanUrl = url.split('#')[0]; // 去除 #video
             const idMatch = cleanUrl.match(/[-\w]{25,}/);
             return idMatch ? idMatch[0] : null;
         }
 
-        // 圖片轉換 (Thumbnail API)
+        // 圖片轉換
         function convertDriveLink(url) {
             const id = getDriveId(url);
             if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w2000`; 
             return url || "https://via.placeholder.com/600x800?text=No+Image";
         }
         
-        // 🟢 影片轉換 (串流模式，解決 LINE 播放問題)
-        function convertDriveVideoLink(url) {
-            const id = getDriveId(url);
-            // 改回 export=download，這是 LINE 支援度最好的方式
-            if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
-            return url;
+        // 🟢 影片 ID 提取
+        function getDriveVideoId(url) {
+            return getDriveId(url);
         }
 
         function init() {
@@ -337,18 +350,16 @@
             });
         }
 
-        // 🟢 播放控制
-        function toggleVideo(wrapper) {
-            const video = wrapper.querySelector('video');
-            const icon = wrapper.querySelector('.play-icon-overlay');
+        // 🟢 點擊載入影片 (解決速度慢 & LINE 相容性)
+        function loadIframe(element, videoId) {
+            const container = element.parentElement.querySelector('.video-content');
+            // 使用 Preview 模式，這是最快且相容性最高的
+            // ?autoplay=1 嘗試自動播放
+            const iframeHtml = `<iframe src="https://drive.google.com/file/d/${videoId}/preview?autoplay=1" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+            container.innerHTML = iframeHtml;
             
-            if (video.paused) {
-                video.play();
-                icon.classList.add('opacity-0');
-            } else {
-                video.pause();
-                icon.classList.remove('opacity-0');
-            }
+            // 隱藏封面
+            element.style.display = 'none';
         }
 
         function openGallery(index) {
@@ -370,12 +381,11 @@
                 mediaItems = mediaItems.concat(urls);
             }
             
-            // 🟢 新增：檢查是否有「影片」專屬欄位
+            // 🟢 影片專屬欄位
             const rawVideo = getValue(item, ['Video', '影片', '視頻', '錄影']);
             if(rawVideo) {
                 const vUrls = rawVideo.split(/[,，\s]+/).filter(u => u.length > 5);
-                // 把影片加到最後面 (或者你想放前面也可以)
-                mediaItems = mediaItems.concat(vUrls.map(u => u + "#video")); // 自動補上 #video 標記以便識別
+                mediaItems = mediaItems.concat(vUrls.map(u => u + "#video"));
             }
 
             const rawGallery = getValue(item, ['Gallery', '相冊', '相簿', '更多']);
@@ -391,19 +401,25 @@
                     const isVideo = url.toLowerCase().includes('#video') || url.toLowerCase().endsWith('.mp4');
                     
                     if (isVideo) {
-                        const videoUrl = convertDriveVideoLink(url);
+                        const videoId = getDriveVideoId(url);
+                        const thumbUrl = convertDriveLink(url);
+                        
+                        // 🟢 假封面播放器結構
                         return `
                              <div class="snap-center shrink-0 w-full md:w-auto h-full flex items-center justify-center p-2" style="min-width: 100%;">
-                                <div class="video-wrapper shadow-2xl border border-gray-700" onclick="toggleVideo(this)">
-                                    <div class="video-loading text-white"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>
-                                    <div class="play-icon-overlay">
-                                        <i class="fa-solid fa-play text-white text-6xl opacity-80 shadow-lg"></i>
+                                <div class="video-wrapper shadow-2xl border border-gray-700">
+                                    
+                                    <!-- 1. 假封面 (點擊後載入影片) -->
+                                    <div class="video-facade" onclick="loadIframe(this, '${videoId}')">
+                                        <img src="${thumbUrl}" alt="Video Preview">
+                                        <i class="fa-solid fa-play text-white text-6xl play-icon"></i>
                                     </div>
-                                    <video src="${videoUrl}" 
-                                           playsinline webkit-playsinline
-                                           poster="${convertDriveLink(url)}" 
-                                           class="w-full h-full object-contain">
-                                    </video>
+
+                                    <!-- 2. 影片容器 (初始為空) -->
+                                    <div class="video-content bg-black flex justify-center items-center">
+                                        <i class="fa-solid fa-spinner fa-spin text-gray-500 text-2xl"></i>
+                                    </div>
+
                                 </div>
                             </div>
                         `;
